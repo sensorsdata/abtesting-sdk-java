@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * 网络请求工具类测试
  *
- * @author fangzhuo@sensorsdata.cn
+ * @author fz <fangzhuo@sensorsdata.cn>
  * @version 1.0.0
  * @since 2021/06/18 09:54
  */
