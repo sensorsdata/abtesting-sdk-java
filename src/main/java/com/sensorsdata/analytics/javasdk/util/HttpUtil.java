@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * 网络请求工具类
  *
- * @author fz <fangzhuo@sensorsdata.cn>
+ * @author fangzhuo@sensorsdata.cn
  * @version 1.0.0
  * @since 2021/06/15 18:28
  */
