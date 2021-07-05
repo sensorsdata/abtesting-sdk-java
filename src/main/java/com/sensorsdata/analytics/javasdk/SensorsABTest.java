@@ -7,7 +7,7 @@ import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import java.util.Map;
 
 /**
- * @author fz <fangzhuo@sensorsdata.cn>
+ * @author fangzhuo@sensorsdata.cn
  * @version 1.0.0
  * @since 2021/06/09 18:50
  */

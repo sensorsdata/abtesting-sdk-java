@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * AB Test 试验结果缓存管理器
  *
- * @author fz <fangzhuo@sensorsdata.cn>
+ * @author fangzhuo@sensorsdata.cn
  * @version 1.0.0
  * @since 2021/06/16 15:41
  */
