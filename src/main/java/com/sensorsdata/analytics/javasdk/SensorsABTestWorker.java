@@ -4,9 +4,10 @@ import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
 import com.sensorsdata.analytics.javasdk.cache.EventCacheManager;
 import com.sensorsdata.analytics.javasdk.cache.ExperimentCacheManager;
+import com.sensorsdata.analytics.javasdk.exception.HttpStatusException;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import com.sensorsdata.analytics.javasdk.util.ABTestUtil;
-import com.sensorsdata.analytics.javasdk.util.HttpConsumer;
+import com.sensorsdata.analytics.javasdk.util.HttpUtil;
 import com.sensorsdata.analytics.javasdk.util.SensorsAnalyticsUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,7 +26,7 @@ import java.util.Map;
 /**
  * AB Test 逻辑处理
  *
- * @author fangzhuo@sensorsdata.cn
+ * @author fz <fangzhuo@sensorsdata.cn>
  * @version 1.0.0
  * @since 2021/06/16 15:12
  */
@@ -47,11 +48,7 @@ class SensorsABTestWorker {
   /**
    * 是否当天首次触发
    */
-  private volatile String trigger;
-  /**
-   * 网络请求对象
-   */
-  private final HttpConsumer httpConsumer;
+  private String trigger;
 
   SensorsABTestWorker(ABGlobalConfig config) {
     this.config = config;
@@ -60,7 +57,6 @@ class SensorsABTestWorker {
         ExperimentCacheManager.getInstance(config.getExperimentCacheTime(), config.getExperimentCacheSize());
     this.eventCacheManager =
         EventCacheManager.getInstance(config.getEventCacheTime(), config.getEventCacheSize());
-    this.httpConsumer = new HttpConsumer(config.getApiUrl(), config.getMaxTotal(), config.getMaxPerRoute());
   }
 
   /**
@@ -79,19 +75,15 @@ class SensorsABTestWorker {
   <T> Experiment<T> fetchABTest(String distinctId, boolean isLoginId, String experimentVariableName, T defaultValue,
       boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> properties, boolean enableCache) {
     if (distinctId == null || distinctId.isEmpty()) {
-      ABTestUtil.printLog(config.getEnableLog(), "error message: distinctId is empty or null,return defaultValue");
+      ABTestUtil.printLog(config.getEnableLog(), "info message: distinctId is empty or null,return defaultValue");
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     if (experimentVariableName == null || experimentVariableName.isEmpty()) {
-      ABTestUtil.printLog(config.getEnableLog(),
-          "error message: experimentVariableName is empty or null,return defaultValue");
+      ABTestUtil.printLog(config.getEnableLog(), "info message: experimentVariableName is empty or null,return defaultValue");
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     if (!ABTestUtil.assertDefaultValueType(defaultValue)) {
-      ABTestUtil.printLog(config.getEnableLog(),
-          String.format(
-              "error message: the type of defaultValue is not Integer,String,Boolean or Json of String,return defaultValue;the type of defaultValue is %s",
-              defaultValue.getClass().toString()));
+      ABTestUtil.printLog(config.getEnableLog(), "info message: the type of defaultValue is not Integer,String,Boolean or Json of String,return defaultValue");
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     JsonNode experiment;
@@ -100,7 +92,6 @@ class SensorsABTestWorker {
       experiment = experimentCacheManager.getExperimentResultByCache(distinctId, isLoginId, experimentVariableName);
       //未命中缓存
       if (experiment == null) {
-        ABTestUtil.printLog(config.getEnableLog(), "info message: not hit experiment cache.making network request");
         experiment = getABTestByHttp(distinctId, isLoginId, timeoutMilliseconds, properties);
         experimentCacheManager.setExperimentResultCache(distinctId, isLoginId, experiment);
       }
@@ -113,8 +104,7 @@ class SensorsABTestWorker {
       try {
         this.trackABTestTrigger(result, null);
       } catch (InvalidArgumentException e) {
-        ABTestUtil.printLog(config.getEnableLog(),
-            String.format("error message: auto track ABTest event %s", e.getMessage()));
+        ABTestUtil.printLog(config.getEnableLog(), String.format("error message: auto track ABTest event %s", e.getMessage()));
       }
     }
     return result;
@@ -133,14 +123,12 @@ class SensorsABTestWorker {
       return;
     }
     if (result.getWhiteList() == null || result.getWhiteList() || result.getAbTestExperimentId() == null) {
-      ABTestUtil.printLog(config.getEnableLog(),
-          "info message: track ABTest event user not hit experiment or in the whiteList");
+      ABTestUtil.printLog(config.getEnableLog(), "info message: track ABTest event user not hit experiment or in the whiteList");
       return;
     }
     //缓存中存在 A/B 事件
     if (eventCacheManager.judgeEventCacheExist(result.getDistinctId(), result.getAbTestExperimentId())) {
-      ABTestUtil.printLog(config.getEnableLog(),
-          "info message: track ABTest event user trigger event have been cached");
+      ABTestUtil.printLog(config.getEnableLog(), "info message: track ABTest event user trigger event have been cached");
       return;
     }
     if (properties == null) {
@@ -185,15 +173,14 @@ class SensorsABTestWorker {
     params.put("properties", properties);
     try {
       String strJson = objectMapper.writeValueAsString(params);
-      String result = httpConsumer.consume(strJson, timeoutMilliseconds);
+      String result = HttpUtil.postABTest(config.getApiUrl(), strJson, timeoutMilliseconds);
       JsonNode res = objectMapper.readTree(result);
       if (res != null && SensorsABTestConst.SUCCESS.equals(res.findValue(SensorsABTestConst.STATUS_KEY).asText())
           && res.findValue(SensorsABTestConst.RESULTS_KEY).size() > 0) {
         return res;
       }
-      ABTestUtil.printLog(config.getEnableLog(), String.format("error message: %s", result));
       return null;
-    } catch (IOException e) {
+    } catch (HttpStatusException | IOException e) {
       ABTestUtil.printLog(config.getEnableLog(), String.format("error message: %s", e.getMessage()));
       return null;
     }
@@ -208,7 +195,7 @@ class SensorsABTestWorker {
   private <T> Experiment<T> convertExperiment(JsonNode message, String distinctId, boolean isLoginId,
       String experimentVariableName, T defaultValue) {
     if (message == null) {
-      ABTestUtil.printLog(config.getEnableLog(), "info message: request result was not obtained,return defaultValue");
+      ABTestUtil.printLog(config.getEnableLog(),"info message: request result was not obtained,return defaultValue");
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     JsonNode results = message.findValue(SensorsABTestConst.RESULTS_KEY);
@@ -228,7 +215,7 @@ class SensorsABTestWorker {
         }
       }
     }
-    ABTestUtil.printLog(config.getEnableLog(), "info message: missing experiment,return defaultValue");
+    ABTestUtil.printLog(config.getEnableLog(),"info message: missing experiment,return defaultValue");
     return new Experiment<>(distinctId, isLoginId, defaultValue);
   }
 
@@ -282,13 +269,4 @@ class SensorsABTestWorker {
     return new SimpleDateFormat("yyyy-MM-dd").format(date);
   }
 
-  public void shutdown() {
-    if (httpConsumer != null) {
-      try {
-        httpConsumer.close();
-      } catch (IOException e) {
-        ABTestUtil.printLog(config.getEnableLog(), String.format("error message:%s", e.getMessage()));
-      }
-    }
-  }
 }

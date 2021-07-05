@@ -3,7 +3,7 @@ package com.sensorsdata.analytics.javasdk.bean;
 import java.io.Serializable;
 
 /**
- * @author fangzhuo@sensorsdata.cn
+ * @author fz <fangzhuo@sensorsdata.cn>
  * @version 1.0.0
  * @since 2021/06/09 21:47
  */

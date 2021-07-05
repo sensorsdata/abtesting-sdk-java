@@ -3,7 +3,7 @@ package com.sensorsdata.analytics.javasdk;
 /**
  * 常量类
  *
- * @author fangzhuo@sensorsdata.cn
+ * @author fz <fangzhuo@sensorsdata.cn>
  * @version 1.0.0
  * @since 2021/06/15 14:39
  */
@@ -16,7 +16,7 @@ public class SensorsABTestConst {
 
   static final String JAVA = "Java";
 
-  static final String VERSION = "0.0.2";
+  static final String VERSION = "0.0.1";
 
   static final String VERSION_KEY = "abtest_lib_version";
 

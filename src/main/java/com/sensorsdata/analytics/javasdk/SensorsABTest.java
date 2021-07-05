@@ -7,7 +7,7 @@ import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import java.util.Map;
 
 /**
- * @author fangzhuo@sensorsdata.cn
+ * @author fz <fangzhuo@sensorsdata.cn>
  * @version 1.0.0
  * @since 2021/06/09 18:50
  */
@@ -144,10 +144,5 @@ public class SensorsABTest implements ISensorsABTest {
   public <T> void trackABTestTrigger(Experiment<T> experiment, Map<String, Object> properties)
       throws InvalidArgumentException {
     this.worker.trackABTestTrigger(experiment, properties);
-  }
-
-  @Override
-  public void shutdown() {
-    this.worker.shutdown();
   }
 }
