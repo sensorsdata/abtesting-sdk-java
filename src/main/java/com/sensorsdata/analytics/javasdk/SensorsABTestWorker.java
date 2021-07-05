@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * AB Test 逻辑处理
  *
- * @author fz <fangzhuo@sensorsdata.cn>
+ * @author fangzhuo@sensorsdata.cn
  * @version 1.0.0
  * @since 2021/06/16 15:12
  */
@@ -79,11 +79,13 @@ class SensorsABTestWorker {
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     if (experimentVariableName == null || experimentVariableName.isEmpty()) {
-      ABTestUtil.printLog(config.getEnableLog(), "info message: experimentVariableName is empty or null,return defaultValue");
+      ABTestUtil.printLog(config.getEnableLog(),
+          "info message: experimentVariableName is empty or null,return defaultValue");
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     if (!ABTestUtil.assertDefaultValueType(defaultValue)) {
-      ABTestUtil.printLog(config.getEnableLog(), "info message: the type of defaultValue is not Integer,String,Boolean or Json of String,return defaultValue");
+      ABTestUtil.printLog(config.getEnableLog(),
+          "info message: the type of defaultValue is not Integer,String,Boolean or Json of String,return defaultValue");
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     JsonNode experiment;
@@ -104,7 +106,8 @@ class SensorsABTestWorker {
       try {
         this.trackABTestTrigger(result, null);
       } catch (InvalidArgumentException e) {
-        ABTestUtil.printLog(config.getEnableLog(), String.format("error message: auto track ABTest event %s", e.getMessage()));
+        ABTestUtil.printLog(config.getEnableLog(),
+            String.format("error message: auto track ABTest event %s", e.getMessage()));
       }
     }
     return result;
@@ -123,12 +126,14 @@ class SensorsABTestWorker {
       return;
     }
     if (result.getWhiteList() == null || result.getWhiteList() || result.getAbTestExperimentId() == null) {
-      ABTestUtil.printLog(config.getEnableLog(), "info message: track ABTest event user not hit experiment or in the whiteList");
+      ABTestUtil.printLog(config.getEnableLog(),
+          "info message: track ABTest event user not hit experiment or in the whiteList");
       return;
     }
     //缓存中存在 A/B 事件
     if (eventCacheManager.judgeEventCacheExist(result.getDistinctId(), result.getAbTestExperimentId())) {
-      ABTestUtil.printLog(config.getEnableLog(), "info message: track ABTest event user trigger event have been cached");
+      ABTestUtil.printLog(config.getEnableLog(),
+          "info message: track ABTest event user trigger event have been cached");
       return;
     }
     if (properties == null) {
@@ -195,7 +200,7 @@ class SensorsABTestWorker {
   private <T> Experiment<T> convertExperiment(JsonNode message, String distinctId, boolean isLoginId,
       String experimentVariableName, T defaultValue) {
     if (message == null) {
-      ABTestUtil.printLog(config.getEnableLog(),"info message: request result was not obtained,return defaultValue");
+      ABTestUtil.printLog(config.getEnableLog(), "info message: request result was not obtained,return defaultValue");
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     JsonNode results = message.findValue(SensorsABTestConst.RESULTS_KEY);
@@ -215,7 +220,7 @@ class SensorsABTestWorker {
         }
       }
     }
-    ABTestUtil.printLog(config.getEnableLog(),"info message: missing experiment,return defaultValue");
+    ABTestUtil.printLog(config.getEnableLog(), "info message: missing experiment,return defaultValue");
     return new Experiment<>(distinctId, isLoginId, defaultValue);
   }
 

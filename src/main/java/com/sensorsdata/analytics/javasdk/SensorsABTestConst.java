@@ -3,7 +3,7 @@ package com.sensorsdata.analytics.javasdk;
 /**
  * 常量类
  *
- * @author fz <fangzhuo@sensorsdata.cn>
+ * @author fangzhuo@sensorsdata.cn
  * @version 1.0.0
  * @since 2021/06/15 14:39
  */

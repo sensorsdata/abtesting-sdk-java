@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * AB Testing 全局参数配置
  *
- * @author fz <fangzhuo@sensorsdata.cn>
+ * @author fangzhuo@sensorsdata.cn
  * @version 1.0.0
  * @since 2021/06/09 16:16
  */
