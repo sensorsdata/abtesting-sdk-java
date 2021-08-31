@@ -7,7 +7,7 @@ import com.sensorsdata.analytics.javasdk.cache.ExperimentCacheManager;
 import com.sensorsdata.analytics.javasdk.exception.HttpStatusException;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import com.sensorsdata.analytics.javasdk.util.ABTestUtil;
-import com.sensorsdata.analytics.javasdk.util.HttpUtil;
+import com.sensorsdata.analytics.javasdk.util.HttpConsumer;
 import com.sensorsdata.analytics.javasdk.util.SensorsAnalyticsUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -49,6 +49,10 @@ class SensorsABTestWorker {
    * 是否当天首次触发
    */
   private String trigger;
+  /**
+   * 网络请求对象
+   */
+  private final HttpConsumer httpConsumer;
 
   SensorsABTestWorker(ABGlobalConfig config) {
     this.config = config;
@@ -57,6 +61,7 @@ class SensorsABTestWorker {
         ExperimentCacheManager.getInstance(config.getExperimentCacheTime(), config.getExperimentCacheSize());
     this.eventCacheManager =
         EventCacheManager.getInstance(config.getEventCacheTime(), config.getEventCacheSize());
+    this.httpConsumer = new HttpConsumer(config.getApiUrl(), config.getMaxTotal(), config.getMaxPerRoute());
   }
 
   /**
@@ -178,12 +183,14 @@ class SensorsABTestWorker {
     params.put("properties", properties);
     try {
       String strJson = objectMapper.writeValueAsString(params);
-      String result = HttpUtil.postABTest(config.getApiUrl(), strJson, timeoutMilliseconds);
+      String result = httpConsumer.consume(strJson, timeoutMilliseconds);
+      //String result = HttpUtil.postABTest(config.getApiUrl(), strJson, timeoutMilliseconds);
       JsonNode res = objectMapper.readTree(result);
       if (res != null && SensorsABTestConst.SUCCESS.equals(res.findValue(SensorsABTestConst.STATUS_KEY).asText())
           && res.findValue(SensorsABTestConst.RESULTS_KEY).size() > 0) {
         return res;
       }
+      ABTestUtil.printLog(config.getEnableLog(), String.format("error message: %s", result));
       return null;
     } catch (HttpStatusException | IOException e) {
       ABTestUtil.printLog(config.getEnableLog(), String.format("error message: %s", e.getMessage()));
@@ -274,4 +281,13 @@ class SensorsABTestWorker {
     return new SimpleDateFormat("yyyy-MM-dd").format(date);
   }
 
+  public void shutdown() {
+    if (httpConsumer != null) {
+      try {
+        httpConsumer.close();
+      } catch (IOException e) {
+        ABTestUtil.printLog(config.getEnableLog(), String.format("error message:%s", e.getMessage()));
+      }
+    }
+  }
 }

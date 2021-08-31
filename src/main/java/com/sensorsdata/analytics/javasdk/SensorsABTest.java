@@ -145,4 +145,9 @@ public class SensorsABTest implements ISensorsABTest {
       throws InvalidArgumentException {
     this.worker.trackABTestTrigger(experiment, properties);
   }
+
+  @Override
+  public void shutdown() {
+    this.worker.shutdown();
+  }
 }

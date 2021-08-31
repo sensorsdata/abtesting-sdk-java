@@ -46,10 +46,19 @@ public class ABGlobalConfig implements Serializable {
    * 是否开启运行日志
    */
   private final Boolean enableLog;
+  /**
+   * 网络请求连接池最大请求次数
+   */
+  private final Integer maxTotal;
+  /**
+   * 网络请求连接池并行接收请求数量
+   */
+  private final Integer maxPerRoute;
+
 
   private ABGlobalConfig(Integer eventCacheTime, Integer eventCacheSize, Integer experimentCacheSize,
       Integer experimentCacheTime, Boolean enableEventCache, String apiUrl, ISensorsAnalytics sensorsAnalytics,
-      Boolean enableLog) {
+      Boolean enableLog, Integer maxTotal, Integer maxPerRoute) {
     this.eventCacheTime = eventCacheTime;
     this.eventCacheSize = eventCacheSize;
     this.experimentCacheSize = experimentCacheSize;
@@ -58,6 +67,8 @@ public class ABGlobalConfig implements Serializable {
     this.apiUrl = apiUrl;
     this.sensorsAnalytics = sensorsAnalytics;
     this.enableLog = enableLog;
+    this.maxTotal = maxTotal;
+    this.maxPerRoute = maxPerRoute;
   }
 
   public static Builder builder() {
@@ -96,6 +107,14 @@ public class ABGlobalConfig implements Serializable {
     return enableLog;
   }
 
+  public Integer getMaxTotal() {
+    return maxTotal;
+  }
+
+  public Integer getMaxPerRoute() {
+    return maxPerRoute;
+  }
+
   public static class Builder {
     private Integer eventCacheTime;
     private Integer eventCacheSize;
@@ -105,6 +124,8 @@ public class ABGlobalConfig implements Serializable {
     private String apiUrl;
     private ISensorsAnalytics sensorsAnalytics;
     private Boolean enableLog;
+    private Integer maxTotal;
+    private Integer maxPerRoute;
 
     private Builder() {
     }
@@ -134,8 +155,14 @@ public class ABGlobalConfig implements Serializable {
       if (enableLog == null) {
         enableLog = false;
       }
+      if (maxTotal == null) {
+        maxTotal = 600;
+      }
+      if (maxPerRoute == null) {
+        maxPerRoute = 300;
+      }
       return new ABGlobalConfig(eventCacheTime, eventCacheSize, experimentCacheSize,
-          experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, enableLog);
+          experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, enableLog, maxTotal, maxPerRoute);
     }
 
     public ABGlobalConfig.Builder setEventCacheTime(Integer eventCacheTime) {
@@ -175,6 +202,16 @@ public class ABGlobalConfig implements Serializable {
 
     public ABGlobalConfig.Builder enableLog(Boolean enableLog) {
       this.enableLog = enableLog;
+      return this;
+    }
+
+    public ABGlobalConfig.Builder setMaxTotal(Integer maxTotal) {
+      this.maxTotal = maxTotal;
+      return this;
+    }
+
+    public ABGlobalConfig.Builder setMaxPerRoute(Integer maxPerRoute) {
+      this.maxPerRoute = maxPerRoute;
       return this;
     }
   }
