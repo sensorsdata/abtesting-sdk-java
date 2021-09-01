@@ -184,7 +184,6 @@ class SensorsABTestWorker {
     try {
       String strJson = objectMapper.writeValueAsString(params);
       String result = httpConsumer.consume(strJson, timeoutMilliseconds);
-      //String result = HttpUtil.postABTest(config.getApiUrl(), strJson, timeoutMilliseconds);
       JsonNode res = objectMapper.readTree(result);
       if (res != null && SensorsABTestConst.SUCCESS.equals(res.findValue(SensorsABTestConst.STATUS_KEY).asText())
           && res.findValue(SensorsABTestConst.RESULTS_KEY).size() > 0) {
