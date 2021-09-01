@@ -34,6 +34,8 @@ public class HttpConsumer implements Closeable {
 
   PoolingHttpClientConnectionManager cm;
 
+  private Lock lock = new ReentrantLock();
+
   public HttpConsumer(String serverUrl, int maxTotal, int maxPerRoute) {
     this.serverUrl = serverUrl;
     cm = new PoolingHttpClientConnectionManager();
@@ -42,9 +44,7 @@ public class HttpConsumer implements Closeable {
     httpClient = HttpClients.custom().setUserAgent("SensorsAnalytics AB Test SDK").setConnectionManager(cm).build();
   }
 
-
   public String consume(String data, int timeoutMilliseconds) throws HttpStatusException, IOException {
-    Lock lock = new ReentrantLock();
     try {
       lock.lock();
       if (httpClient == null) {
