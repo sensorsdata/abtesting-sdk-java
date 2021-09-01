@@ -16,7 +16,7 @@ public class SensorsABTestConst {
 
   static final String JAVA = "Java";
 
-  static final String VERSION = "0.0.1";
+  static final String VERSION = "0.0.2";
 
   static final String VERSION_KEY = "abtest_lib_version";
 

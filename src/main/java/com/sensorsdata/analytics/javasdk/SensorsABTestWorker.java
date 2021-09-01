@@ -80,17 +80,19 @@ class SensorsABTestWorker {
   <T> Experiment<T> fetchABTest(String distinctId, boolean isLoginId, String experimentVariableName, T defaultValue,
       boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> properties, boolean enableCache) {
     if (distinctId == null || distinctId.isEmpty()) {
-      ABTestUtil.printLog(config.getEnableLog(), "info message: distinctId is empty or null,return defaultValue");
+      ABTestUtil.printLog(config.getEnableLog(), "error message: distinctId is empty or null,return defaultValue");
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     if (experimentVariableName == null || experimentVariableName.isEmpty()) {
       ABTestUtil.printLog(config.getEnableLog(),
-          "info message: experimentVariableName is empty or null,return defaultValue");
+          "error message: experimentVariableName is empty or null,return defaultValue");
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     if (!ABTestUtil.assertDefaultValueType(defaultValue)) {
       ABTestUtil.printLog(config.getEnableLog(),
-          "info message: the type of defaultValue is not Integer,String,Boolean or Json of String,return defaultValue");
+          String.format(
+              "error message: the type of defaultValue is not Integer,String,Boolean or Json of String,return defaultValue;the type of defaultValue is %s",
+              defaultValue.getClass().toString()));
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     JsonNode experiment;
@@ -99,6 +101,7 @@ class SensorsABTestWorker {
       experiment = experimentCacheManager.getExperimentResultByCache(distinctId, isLoginId, experimentVariableName);
       //未命中缓存
       if (experiment == null) {
+        ABTestUtil.printLog(config.getEnableLog(), "info message: not hit experiment cache.making network request");
         experiment = getABTestByHttp(distinctId, isLoginId, timeoutMilliseconds, properties);
         experimentCacheManager.setExperimentResultCache(distinctId, isLoginId, experiment);
       }
