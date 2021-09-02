@@ -156,10 +156,10 @@ public class ABGlobalConfig implements Serializable {
         enableLog = false;
       }
       if (maxTotal == null) {
-        maxTotal = 600;
+        maxTotal = 1000;
       }
       if (maxPerRoute == null) {
-        maxPerRoute = 300;
+        maxPerRoute = 400;
       }
       return new ABGlobalConfig(eventCacheTime, eventCacheSize, experimentCacheSize,
           experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, enableLog, maxTotal, maxPerRoute);

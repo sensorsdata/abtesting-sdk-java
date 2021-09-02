@@ -4,7 +4,6 @@ import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
 import com.sensorsdata.analytics.javasdk.cache.EventCacheManager;
 import com.sensorsdata.analytics.javasdk.cache.ExperimentCacheManager;
-import com.sensorsdata.analytics.javasdk.exception.HttpStatusException;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import com.sensorsdata.analytics.javasdk.util.ABTestUtil;
 import com.sensorsdata.analytics.javasdk.util.HttpConsumer;
@@ -48,7 +47,7 @@ class SensorsABTestWorker {
   /**
    * 是否当天首次触发
    */
-  private String trigger;
+  private volatile String trigger;
   /**
    * 网络请求对象
    */
@@ -194,7 +193,7 @@ class SensorsABTestWorker {
       }
       ABTestUtil.printLog(config.getEnableLog(), String.format("error message: %s", result));
       return null;
-    } catch (HttpStatusException | IOException e) {
+    } catch (IOException e) {
       ABTestUtil.printLog(config.getEnableLog(), String.format("error message: %s", e.getMessage()));
       return null;
     }
