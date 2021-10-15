@@ -36,28 +36,42 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <sensors.version>3.2.0</sensors.version>
+        <guava.version>18.0</guava.version>
+        <junit.version>4.11</junit.version>
+        <lombok.version>1.18.20</lombok.version>
+        <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
 
     <dependencies>
-
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.sensorsdata.analytics.javasdk</groupId>
             <artifactId>SensorsAnalyticsSDK</artifactId>
-            <version>3.2.0</version>
+            <version>${sensors.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>18.0</version>
+            <version>${guava.version}</version>
         </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
 

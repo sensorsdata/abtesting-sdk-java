@@ -19,10 +19,4 @@ public class ABTestUtil {
     return false;
   }
 
-  public static void printLog(boolean enableLog, String errorMessage) {
-    if (enableLog) {
-      System.out.printf("%s.%n", errorMessage);
-    }
-  }
-
 }

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0.0
  * @since 2021/06/16 15:41
  */
+@Slf4j
 public class ExperimentCacheManager {
 
   private final LoadingCache<String, JsonNode> experimentResultCache;
@@ -39,6 +41,7 @@ public class ExperimentCacheManager {
             return null;
           }
         });
+    log.info("init experiment cache:size:{};duration:{}.", size, duration);
   }
 
   private static class SensorsABTestCacheManagerStaticNestedClass {

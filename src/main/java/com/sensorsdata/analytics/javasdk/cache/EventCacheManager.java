@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0.0
  * @since 2021/06/17 11:18
  */
+@Slf4j
 public class EventCacheManager {
   /**
    * 上报事件缓存
@@ -40,6 +42,7 @@ public class EventCacheManager {
             return null;
           }
         });
+    log.info("init event cache size:{};duration:{}.", size, duration);
   }
 
   private static class SensorsABTestCacheManagerStaticNestedClass {

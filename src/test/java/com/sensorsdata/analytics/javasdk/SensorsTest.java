@@ -202,8 +202,9 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -232,8 +233,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -261,8 +262,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -290,8 +291,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -319,8 +320,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -348,8 +349,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -376,8 +377,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -404,8 +405,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -496,8 +497,8 @@ public class SensorsTest {
     assertEquals(true, result.getIsLoginId());
     assertEquals("115", result.getAbTestExperimentId());
     assertEquals("1", result.getAbTestExperimentGroupId());
-    Assert.assertFalse(result.getControlGroup());
-    Assert.assertFalse(result.getWhiteList());
+    Assert.assertFalse(result.getIsControlGroup());
+    Assert.assertFalse(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -528,8 +529,8 @@ public class SensorsTest {
     assertEquals(true, result.getIsLoginId());
     assertEquals("115", result.getAbTestExperimentId());
     assertEquals("1", result.getAbTestExperimentGroupId());
-    Assert.assertFalse(result.getControlGroup());
-    Assert.assertFalse(result.getWhiteList());
+    Assert.assertFalse(result.getIsControlGroup());
+    Assert.assertFalse(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -560,8 +561,8 @@ public class SensorsTest {
     assertEquals(true, result.getIsLoginId());
     assertEquals("115", result.getAbTestExperimentId());
     assertEquals("1", result.getAbTestExperimentGroupId());
-    Assert.assertFalse(result.getControlGroup());
-    Assert.assertFalse(result.getWhiteList());
+    Assert.assertFalse(result.getIsControlGroup());
+    Assert.assertFalse(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -591,8 +592,8 @@ public class SensorsTest {
     assertEquals(true, result.getIsLoginId());
     assertEquals("115", result.getAbTestExperimentId());
     assertEquals("1", result.getAbTestExperimentGroupId());
-    Assert.assertFalse(result.getControlGroup());
-    Assert.assertFalse(result.getWhiteList());
+    Assert.assertFalse(result.getIsControlGroup());
+    Assert.assertFalse(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -637,8 +638,8 @@ public class SensorsTest {
     assertEquals(true, result.getIsLoginId());
     assertEquals("115", result.getAbTestExperimentId());
     assertEquals("1", result.getAbTestExperimentGroupId());
-    Assert.assertFalse(result.getControlGroup());
-    Assert.assertFalse(result.getWhiteList());
+    Assert.assertFalse(result.getIsControlGroup());
+    Assert.assertFalse(result.getIsWhiteList());
 
 
     assertEquals(0, cacheManager.getCacheSize());
@@ -665,8 +666,8 @@ public class SensorsTest {
     assertEquals(true, result.getIsLoginId());
     assertEquals("115", result.getAbTestExperimentId());
     assertEquals("1", result.getAbTestExperimentGroupId());
-    Assert.assertFalse(result.getControlGroup());
-    Assert.assertFalse(result.getWhiteList());
+    Assert.assertFalse(result.getIsControlGroup());
+    Assert.assertFalse(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -724,8 +725,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("115", result.getAbTestExperimentId());
     assertEquals("1", result.getAbTestExperimentGroupId());
-    Assert.assertFalse(result.getControlGroup());
-    Assert.assertFalse(result.getWhiteList());
+    Assert.assertFalse(result.getIsControlGroup());
+    Assert.assertFalse(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -752,8 +753,8 @@ public class SensorsTest {
 //        assertEquals(false, result.getIsLoginId());
 //        assertEquals("115",result.getAbTestExperimentId());
 //        assertEquals("1",result.getAbTestExperimentGroupId());
-//        Assert.assertFalse(result.getControlGroup());
-//        Assert.assertFalse(result.getWhiteList());
+//        Assert.assertFalse(result.getIsControlGroup());
+//        Assert.assertFalse(result.getIsWhiteList());
 
 //        ExperimentCacheManager cacheManager =
 //                getExperimentCacheManagerByReflect(getSensorsABTestWorkerByReflect(abTest));
@@ -865,8 +866,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertNull(result.getAbTestExperimentGroupId());
     assertNull(result.getAbTestExperimentId());
-    assertNull(result.getControlGroup());
-    assertNull(result.getWhiteList());
+    assertNull(result.getIsControlGroup());
+    assertNull(result.getIsWhiteList());
     assertEquals("grey", result.getResult());
 
     //
@@ -893,8 +894,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertNull(result.getAbTestExperimentGroupId());
     assertNull(result.getAbTestExperimentId());
-    assertNull(result.getControlGroup());
-    assertNull(result.getWhiteList());
+    assertNull(result.getIsControlGroup());
+    assertNull(result.getIsWhiteList());
     assertEquals("grey", result.getResult());
 
     //
@@ -1522,8 +1523,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -1552,8 +1553,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -1581,8 +1582,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -1611,8 +1612,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -1639,8 +1640,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -1668,8 +1669,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -1696,8 +1697,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -1725,8 +1726,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -1754,8 +1755,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -1784,8 +1785,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("102", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertTrue(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertTrue(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -1820,8 +1821,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("115", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertFalse(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertFalse(result.getIsWhiteList());
 
     ExperimentCacheManager cacheManager =
         getExperimentCacheManagerByReflect(getSensorsABTestWorkerByReflect(abTest));
@@ -1856,8 +1857,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("115", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertFalse(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertFalse(result.getIsWhiteList());
 
     ExperimentCacheManager cacheManager =
         getExperimentCacheManagerByReflect(getSensorsABTestWorkerByReflect(abTest));
@@ -1886,8 +1887,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("115", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertFalse(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertFalse(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -1917,8 +1918,8 @@ public class SensorsTest {
     assertEquals(false, result.getIsLoginId());
     assertEquals("115", result.getAbTestExperimentId());
     assertEquals("0", result.getAbTestExperimentGroupId());
-    Assert.assertTrue(result.getControlGroup());
-    Assert.assertFalse(result.getWhiteList());
+    Assert.assertTrue(result.getIsControlGroup());
+    Assert.assertFalse(result.getIsWhiteList());
 
     //
     ExperimentCacheManager cacheManager =
@@ -2143,7 +2144,7 @@ public class SensorsTest {
     final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
     ObjectMapper objectMapper = new ObjectMapper();
     Experiment<String> result = abTest.asyncFetchABTest(distinctId, true, "color", "{\"color\":\"grey\"}");
-    assertTrue(result.getWhiteList());
+    assertTrue(result.getIsWhiteList());
     EventCacheManager eventCacheManager = getEventCacheManagerByReflect(getSensorsABTestWorkerByReflect(abTest));
     assertEquals(0, eventCacheManager.getCacheSize());
   }

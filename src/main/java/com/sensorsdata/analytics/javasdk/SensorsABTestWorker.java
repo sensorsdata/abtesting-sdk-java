@@ -4,14 +4,15 @@ import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
 import com.sensorsdata.analytics.javasdk.cache.EventCacheManager;
 import com.sensorsdata.analytics.javasdk.cache.ExperimentCacheManager;
-import com.sensorsdata.analytics.javasdk.exception.HttpStatusException;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import com.sensorsdata.analytics.javasdk.util.ABTestUtil;
-import com.sensorsdata.analytics.javasdk.util.HttpUtil;
+import com.sensorsdata.analytics.javasdk.util.HttpConsumer;
 import com.sensorsdata.analytics.javasdk.util.SensorsAnalyticsUtil;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -30,6 +31,7 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2021/06/16 15:12
  */
+@Slf4j
 class SensorsABTestWorker {
 
   private final ObjectMapper objectMapper;
@@ -48,7 +50,11 @@ class SensorsABTestWorker {
   /**
    * 是否当天首次触发
    */
-  private String trigger;
+  private volatile String trigger;
+  /**
+   * 网络请求对象
+   */
+  private final HttpConsumer httpConsumer;
 
   SensorsABTestWorker(ABGlobalConfig config) {
     this.config = config;
@@ -57,6 +63,7 @@ class SensorsABTestWorker {
         ExperimentCacheManager.getInstance(config.getExperimentCacheTime(), config.getExperimentCacheSize());
     this.eventCacheManager =
         EventCacheManager.getInstance(config.getEventCacheTime(), config.getEventCacheSize());
+    this.httpConsumer = new HttpConsumer(config.getApiUrl(), config.getMaxTotal(), config.getMaxPerRoute());
   }
 
   /**
@@ -75,17 +82,17 @@ class SensorsABTestWorker {
   <T> Experiment<T> fetchABTest(String distinctId, boolean isLoginId, String experimentVariableName, T defaultValue,
       boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> properties, boolean enableCache) {
     if (distinctId == null || distinctId.isEmpty()) {
-      ABTestUtil.printLog(config.getEnableLog(), "info message: distinctId is empty or null,return defaultValue");
+      log.warn("distinctId is empty or null,return defaultValue.");
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     if (experimentVariableName == null || experimentVariableName.isEmpty()) {
-      ABTestUtil.printLog(config.getEnableLog(),
-          "info message: experimentVariableName is empty or null,return defaultValue");
+      log.warn("distinctId:{} experimentVariableName is empty or null,return defaultValue.", distinctId);
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     if (!ABTestUtil.assertDefaultValueType(defaultValue)) {
-      ABTestUtil.printLog(config.getEnableLog(),
-          "info message: the type of defaultValue is not Integer,String,Boolean or Json of String,return defaultValue");
+      log.warn(
+          "distinctId:{} experimentVariableName:{} the type of defaultValue is not Integer,String,Boolean or Json of String,return defaultValue;the type of defaultValue is {}.",
+          distinctId, experimentVariableName, defaultValue == null ? "null" : defaultValue.getClass().toString());
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     JsonNode experiment;
@@ -94,6 +101,8 @@ class SensorsABTestWorker {
       experiment = experimentCacheManager.getExperimentResultByCache(distinctId, isLoginId, experimentVariableName);
       //未命中缓存
       if (experiment == null) {
+        log.info("distinctId:{} experimentVariableName:{} not hit experiment cache,making network request.",
+            distinctId, experimentVariableName);
         experiment = getABTestByHttp(distinctId, isLoginId, timeoutMilliseconds, properties);
         experimentCacheManager.setExperimentResultCache(distinctId, isLoginId, experiment);
       }
@@ -106,8 +115,8 @@ class SensorsABTestWorker {
       try {
         this.trackABTestTrigger(result, null);
       } catch (InvalidArgumentException e) {
-        ABTestUtil.printLog(config.getEnableLog(),
-            String.format("error message: auto track ABTest event %s", e.getMessage()));
+        log.error("distinctId:{} experimentVariableName:{} auto track ABTest event.",
+            distinctId, experimentVariableName, e);
       }
     }
     return result;
@@ -122,18 +131,17 @@ class SensorsABTestWorker {
    */
   <T> void trackABTestTrigger(Experiment<T> result, Map<String, Object> properties) throws InvalidArgumentException {
     if (result == null) {
-      ABTestUtil.printLog(config.getEnableLog(), "info message: track ABTest event Experiment is null");
+      log.info("track ABTest event experiment result is null.");
       return;
     }
-    if (result.getWhiteList() == null || result.getWhiteList() || result.getAbTestExperimentId() == null) {
-      ABTestUtil.printLog(config.getEnableLog(),
-          "info message: track ABTest event user not hit experiment or in the whiteList");
+    if (result.getIsWhiteList() == null || result.getIsWhiteList() || result.getAbTestExperimentId() == null) {
+      log.info("distinctId:{} track ABTest event user not hit experiment or in the whiteList.", result.getDistinctId());
       return;
     }
     //缓存中存在 A/B 事件
     if (eventCacheManager.judgeEventCacheExist(result.getDistinctId(), result.getAbTestExperimentId())) {
-      ABTestUtil.printLog(config.getEnableLog(),
-          "info message: track ABTest event user trigger event have been cached");
+      log.info("distinctId:{} track experimentId:{} event have been cached.",
+          result.getDistinctId(), result.getAbTestExperimentId());
       return;
     }
     if (properties == null) {
@@ -178,19 +186,19 @@ class SensorsABTestWorker {
     params.put("properties", properties);
     try {
       String strJson = objectMapper.writeValueAsString(params);
-      String result = HttpUtil.postABTest(config.getApiUrl(), strJson, timeoutMilliseconds);
+      String result = httpConsumer.consume(strJson, timeoutMilliseconds);
       JsonNode res = objectMapper.readTree(result);
       if (res != null && SensorsABTestConst.SUCCESS.equals(res.findValue(SensorsABTestConst.STATUS_KEY).asText())
           && res.findValue(SensorsABTestConst.RESULTS_KEY).size() > 0) {
         return res;
       }
+      log.error("distinctId:{} Server return error message:{}", distinctId, result);
       return null;
-    } catch (HttpStatusException | IOException e) {
-      ABTestUtil.printLog(config.getEnableLog(), String.format("error message: %s", e.getMessage()));
+    } catch (IOException e) {
+      log.error("distinctId:{} failed to network request.", distinctId, e);
       return null;
     }
   }
-
 
   /**
    * 将请求返回结果解析成标准返回对象
@@ -200,7 +208,7 @@ class SensorsABTestWorker {
   private <T> Experiment<T> convertExperiment(JsonNode message, String distinctId, boolean isLoginId,
       String experimentVariableName, T defaultValue) {
     if (message == null) {
-      ABTestUtil.printLog(config.getEnableLog(), "info message: request result was not obtained,return defaultValue");
+      log.debug("distinctId:{} experiment result is null,return defaultValue.", distinctId);
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     JsonNode results = message.findValue(SensorsABTestConst.RESULTS_KEY);
@@ -220,7 +228,13 @@ class SensorsABTestWorker {
         }
       }
     }
-    ABTestUtil.printLog(config.getEnableLog(), "info message: missing experiment,return defaultValue");
+    try {
+      log.warn(
+          "distinctId:{} missing experiment,return defaultValue;experiment result:{},isLoginId:{},experimentVariableName:{},defaultValue:{}.",
+          distinctId, objectMapper.writeValueAsString(message), isLoginId, experimentVariableName, defaultValue);
+    } catch (JsonProcessingException e) {
+      log.error("print log occurred error.", e);
+    }
     return new Experiment<>(distinctId, isLoginId, defaultValue);
   }
 
@@ -274,4 +288,13 @@ class SensorsABTestWorker {
     return new SimpleDateFormat("yyyy-MM-dd").format(date);
   }
 
+  public void shutdown() {
+    if (httpConsumer != null) {
+      try {
+        httpConsumer.close();
+      } catch (IOException e) {
+        log.error("close http consumer occurred error.", e);
+      }
+    }
+  }
 }

@@ -3,6 +3,8 @@ package com.sensorsdata.analytics.javasdk.bean;
 import com.sensorsdata.analytics.javasdk.ISensorsAnalytics;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
+import lombok.Getter;
+
 import java.io.Serializable;
 
 /**
@@ -17,39 +19,52 @@ public class ABGlobalConfig implements Serializable {
   /**
    * 单用户事件缓存
    */
+  @Getter
   private final Integer eventCacheTime;
   /**
    * 事件总缓存用户量
    */
+  @Getter
   private final Integer eventCacheSize;
   /**
    * 试验总缓存用户量
    */
+  @Getter
   private final Integer experimentCacheSize;
   /**
    * 单用户试验缓存时间
    */
+  @Getter
   private final Integer experimentCacheTime;
   /**
    * 是否开启 ABTestTrigger 事件
    */
+  @Getter
   private final Boolean enableEventCache;
   /**
    * 分流试验地址
    */
+  @Getter
   private final String apiUrl;
   /**
    * 神策分析 sa（要求使用3.2.0及以上版本）
    */
+  @Getter
   private final ISensorsAnalytics sensorsAnalytics;
   /**
-   * 是否开启运行日志
+   * 网络请求连接池最大请求次数
    */
-  private final Boolean enableLog;
+  @Getter
+  private final Integer maxTotal;
+  /**
+   * 网络请求连接池并行接收请求数量
+   */
+  @Getter
+  private final Integer maxPerRoute;
 
   private ABGlobalConfig(Integer eventCacheTime, Integer eventCacheSize, Integer experimentCacheSize,
       Integer experimentCacheTime, Boolean enableEventCache, String apiUrl, ISensorsAnalytics sensorsAnalytics,
-      Boolean enableLog) {
+      Integer maxTotal, Integer maxPerRoute) {
     this.eventCacheTime = eventCacheTime;
     this.eventCacheSize = eventCacheSize;
     this.experimentCacheSize = experimentCacheSize;
@@ -57,43 +72,12 @@ public class ABGlobalConfig implements Serializable {
     this.enableEventCache = enableEventCache;
     this.apiUrl = apiUrl;
     this.sensorsAnalytics = sensorsAnalytics;
-    this.enableLog = enableLog;
+    this.maxTotal = maxTotal;
+    this.maxPerRoute = maxPerRoute;
   }
 
   public static Builder builder() {
     return new Builder();
-  }
-
-  public Integer getEventCacheTime() {
-    return eventCacheTime;
-  }
-
-  public Integer getEventCacheSize() {
-    return eventCacheSize;
-  }
-
-  public Integer getExperimentCacheSize() {
-    return experimentCacheSize;
-  }
-
-  public Integer getExperimentCacheTime() {
-    return experimentCacheTime;
-  }
-
-  public Boolean getEnableEventCache() {
-    return enableEventCache;
-  }
-
-  public String getApiUrl() {
-    return apiUrl;
-  }
-
-  public ISensorsAnalytics getSensorsAnalytics() {
-    return sensorsAnalytics;
-  }
-
-  public Boolean getEnableLog() {
-    return enableLog;
   }
 
   public static class Builder {
@@ -104,7 +88,8 @@ public class ABGlobalConfig implements Serializable {
     private Boolean enableEventCache;
     private String apiUrl;
     private ISensorsAnalytics sensorsAnalytics;
-    private Boolean enableLog;
+    private Integer maxTotal;
+    private Integer maxPerRoute;
 
     private Builder() {
     }
@@ -114,7 +99,7 @@ public class ABGlobalConfig implements Serializable {
         throw new InvalidArgumentException("The apiUrl is empty.");
       }
       if (sensorsAnalytics == null) {
-        throw new InvalidArgumentException("The Sensors Analysis SDK is empty.");
+        throw new InvalidArgumentException("The Sensors Analysis SDK instance is empty.");
       }
       if (eventCacheTime == null || eventCacheTime > 1440 || eventCacheTime < 0) {
         eventCacheTime = 1440;
@@ -131,11 +116,14 @@ public class ABGlobalConfig implements Serializable {
       if (enableEventCache == null) {
         enableEventCache = true;
       }
-      if (enableLog == null) {
-        enableLog = false;
+      if (maxTotal == null) {
+        maxTotal = 1000;
+      }
+      if (maxPerRoute == null) {
+        maxPerRoute = 400;
       }
       return new ABGlobalConfig(eventCacheTime, eventCacheSize, experimentCacheSize,
-          experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, enableLog);
+          experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, maxTotal, maxPerRoute);
     }
 
     public ABGlobalConfig.Builder setEventCacheTime(Integer eventCacheTime) {
@@ -173,8 +161,13 @@ public class ABGlobalConfig implements Serializable {
       return this;
     }
 
-    public ABGlobalConfig.Builder enableLog(Boolean enableLog) {
-      this.enableLog = enableLog;
+    public ABGlobalConfig.Builder setMaxTotal(Integer maxTotal) {
+      this.maxTotal = maxTotal;
+      return this;
+    }
+
+    public ABGlobalConfig.Builder setMaxPerRoute(Integer maxPerRoute) {
+      this.maxPerRoute = maxPerRoute;
       return this;
     }
   }
