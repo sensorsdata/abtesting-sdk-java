@@ -41,7 +41,7 @@ public class ExperimentCacheManager {
             return null;
           }
         });
-    log.info("init experiment cache:size:{};duration:{}.", size, duration);
+    log.info("Initializing experiment cache:size:{};duration:{}.", size, duration);
   }
 
   private static class SensorsABTestCacheManagerStaticNestedClass {
@@ -54,9 +54,12 @@ public class ExperimentCacheManager {
     return SensorsABTestCacheManagerStaticNestedClass.INSTANCE;
   }
 
+
   public JsonNode getExperimentResultByCache(String distinctId, boolean isLoginId, String experimentName) {
     JsonNode experimentResult = this.experimentResultCache.getIfPresent(generateKey(distinctId, isLoginId));
     if (experimentResult == null) {
+      log.debug("distinctId:{} isLoginId:{} experimentName:{} not found in cache.",
+          distinctId, isLoginId, experimentName);
       return null;
     }
     JsonNode results = experimentResult.findValue(SensorsABTestConst.RESULTS_KEY);
@@ -71,6 +74,8 @@ public class ExperimentCacheManager {
         }
       }
     }
+    log.debug("distinctId:{} isLoginId:{} experimentName:{} not hit cache result.",
+        distinctId, isLoginId, experimentName);
     return null;
   }
 

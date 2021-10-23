@@ -1,7 +1,8 @@
 package com.sensorsdata.analytics.javasdk.bean;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 
@@ -10,8 +11,9 @@ import java.io.Serializable;
  * @version 1.0.0
  * @since 2021/06/09 21:47
  */
+@Getter
+@Setter
 @AllArgsConstructor
-@Data
 public class Experiment<T> implements Serializable {
   private static final long serialVersionUID = -236604631513293247L;
   /**

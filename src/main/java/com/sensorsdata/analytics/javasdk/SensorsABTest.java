@@ -21,128 +21,364 @@ public class SensorsABTest implements ISensorsABTest {
 
   @Override
   public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
-      T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> properties) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, enableAutoTrackEvent,
-        timeoutMilliseconds, properties, false);
-  }
-
-
-  @Override
-  public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, true,
-        3000, null, false);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .build());
   }
 
   @Override
   public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, boolean enableAutoTrackEvent) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, enableAutoTrackEvent,
-        3000, null, false);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .build());
   }
 
   @Override
   public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, int timeoutMilliseconds) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, true,
-        timeoutMilliseconds, null, false);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .build());
   }
 
   @Override
   public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, Map<String, Object> properties) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, true,
-        3000, properties, false);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .properties(properties)
+        .build());
   }
 
+  @Override
+  public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      Map<String, Object> customProperties, T defaultValue) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .customProperties(customProperties)
+        .defaultValue(defaultValue)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      Map<String, Object> customProperties, T defaultValue, boolean enableAutoTrackEvent) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .customProperties(customProperties)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      Map<String, Object> customProperties, T defaultValue, int timeoutMilliseconds) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .customProperties(customProperties)
+        .defaultValue(defaultValue)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      Map<String, Object> customProperties, T defaultValue, Map<String, Object> properties) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .customProperties(customProperties)
+        .defaultValue(defaultValue)
+        .properties(properties)
+        .build());
+  }
 
   @Override
   public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, boolean enableAutoTrackEvent, Map<String, Object> properties) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, enableAutoTrackEvent,
-        3000, properties, false);
-  }
-
-
-  @Override
-  public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
-      T defaultValue, int timeoutMilliseconds, Map<String, Object> properties) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, true,
-        timeoutMilliseconds, properties, false);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .properties(properties)
+        .build());
   }
 
   @Override
   public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, enableAutoTrackEvent,
-        timeoutMilliseconds, null, false);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .build());
   }
 
   @Override
-  public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+  public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      T defaultValue, int timeoutMilliseconds, Map<String, Object> properties) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .properties(properties)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> properties) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, enableAutoTrackEvent,
-        timeoutMilliseconds, properties, true);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .properties(properties)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      Map<String, Object> customProperties, T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds,
+      Map<String, Object> properties) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .customProperties(customProperties)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .properties(properties)
+        .build());
   }
 
   @Override
   public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, true,
-        3000, null, true);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .enableCache(true)
+        .build());
   }
 
   @Override
   public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, boolean enableAutoTrackEvent) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, enableAutoTrackEvent,
-        3000, null, true);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .enableCache(true)
+        .build());
   }
 
   @Override
   public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, int timeoutMilliseconds) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, true,
-        3000, null, true);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .enableCache(true)
+        .build());
   }
 
   @Override
   public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, Map<String, Object> properties) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, true,
-        3000, properties, true);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .properties(properties)
+        .enableCache(true)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      Map<String, Object> customProperties, T defaultValue) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .customProperties(customProperties)
+        .defaultValue(defaultValue)
+        .enableCache(true)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      Map<String, Object> customProperties, T defaultValue, boolean enableAutoTrackEvent) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .customProperties(customProperties)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .enableCache(true)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      Map<String, Object> customProperties, T defaultValue, int timeoutMilliseconds) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .customProperties(customProperties)
+        .defaultValue(defaultValue)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .enableCache(true)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      Map<String, Object> customProperties, T defaultValue, Map<String, Object> properties) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .customProperties(customProperties)
+        .defaultValue(defaultValue)
+        .properties(properties)
+        .enableCache(true)
+        .build());
   }
 
   @Override
   public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, boolean enableAutoTrackEvent, Map<String, Object> properties) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, enableAutoTrackEvent,
-        3000, properties, true);
-  }
-
-  @Override
-  public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
-      T defaultValue, int timeoutMilliseconds, Map<String, Object> properties) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, true,
-        timeoutMilliseconds, properties, true);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .properties(properties)
+        .enableCache(true)
+        .build());
   }
 
   @Override
   public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds) {
-    return worker.fetchABTest(distinctId, isLoginId, experimentVariableName, defaultValue, enableAutoTrackEvent,
-        timeoutMilliseconds, null, true);
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .enableCache(true)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      T defaultValue, int timeoutMilliseconds, Map<String, Object> properties) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .properties(properties)
+        .enableCache(true)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> properties) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .properties(properties)
+        .enableCache(true)
+        .build());
+  }
+
+  @Override
+  public <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
+      Map<String, Object> customProperties, T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds,
+      Map<String, Object> properties) {
+    return worker.fetchABTest(Params.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .experimentVariableName(experimentVariableName)
+        .customProperties(customProperties)
+        .defaultValue(defaultValue)
+        .enableAutoTrackEvent(enableAutoTrackEvent)
+        .timeoutMilliseconds(timeoutMilliseconds)
+        .properties(properties)
+        .enableCache(true)
+        .build());
   }
 
   @Override
   public <T> void trackABTestTrigger(Experiment<T> experiment) throws InvalidArgumentException {
-    this.trackABTestTrigger(experiment, null);
+    worker.trackABTestTrigger(experiment, null);
   }
-
 
   @Override
   public <T> void trackABTestTrigger(Experiment<T> experiment, Map<String, Object> properties)
       throws InvalidArgumentException {
-    this.worker.trackABTestTrigger(experiment, properties);
+    worker.trackABTestTrigger(experiment, properties);
+  }
+
+  @Override
+  public void shutdown() {
+    worker.shutdown();
   }
 }

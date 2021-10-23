@@ -42,7 +42,7 @@ public class EventCacheManager {
             return null;
           }
         });
-    log.info("init event cache size:{};duration:{}.", size, duration);
+    log.info("Initializing event cache size:{};duration:{}.", size, duration);
   }
 
   private static class SensorsABTestCacheManagerStaticNestedClass {

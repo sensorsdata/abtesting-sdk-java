@@ -12,14 +12,14 @@ import com.sensorsdata.analytics.javasdk.util.SensorsAnalyticsUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.DateFormatUtils;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -69,54 +69,52 @@ class SensorsABTestWorker {
   /**
    * 处理AB Test 结果
    *
-   * @param distinctId             匿名ID/业务ID
-   * @param isLoginId              是否为登录ID
-   * @param experimentVariableName 试验名称
-   * @param defaultValue           默认值
-   * @param enableAutoTrackEvent   是否开启自动上报事件
-   * @param enableCache            是否开启优先查询缓存
-   * @param timeoutMilliseconds    接口超时设置
-   * @param properties             接口请求参数
-   * @return Experiment<T>
+   * @param <T> params 请求参数类
+   * @return Experiment<T> 返回试验结果
    */
-  <T> Experiment<T> fetchABTest(String distinctId, boolean isLoginId, String experimentVariableName, T defaultValue,
-      boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> properties, boolean enableCache) {
-    if (distinctId == null || distinctId.isEmpty()) {
-      log.warn("distinctId is empty or null,return defaultValue.");
-      return new Experiment<>(distinctId, isLoginId, defaultValue);
+  <T> Experiment<T> fetchABTest(Params<T> params) {
+    if (params.getDistinctId() == null || params.getDistinctId().isEmpty()) {
+      log.info("DistinctId is empty or null,return defaultValue.");
+      return new Experiment<>(params.getDistinctId(), params.getIsLoginId(), params.getDefaultValue());
     }
-    if (experimentVariableName == null || experimentVariableName.isEmpty()) {
-      log.warn("distinctId:{} experimentVariableName is empty or null,return defaultValue.", distinctId);
-      return new Experiment<>(distinctId, isLoginId, defaultValue);
+    if (params.getExperimentVariableName() == null || params.getExperimentVariableName().isEmpty()) {
+      log.info("ExperimentVariableName is empty or null,return defaultValue.distinctId:{}", params.getDistinctId());
+      return new Experiment<>(params.getDistinctId(), params.getIsLoginId(), params.getDefaultValue());
     }
-    if (!ABTestUtil.assertDefaultValueType(defaultValue)) {
-      log.warn(
-          "distinctId:{} experimentVariableName:{} the type of defaultValue is not Integer,String,Boolean or Json of String,return defaultValue;the type of defaultValue is {}.",
-          distinctId, experimentVariableName, defaultValue == null ? "null" : defaultValue.getClass().toString());
-      return new Experiment<>(distinctId, isLoginId, defaultValue);
+    if (!ABTestUtil.assertDefaultValueType(params.getDefaultValue())) {
+      log.info(
+          "The type of defaultValue is not Integer,String,Boolean,Json of String,return defaultValue.the current type of defaultValue is {};distinctId:{};experimentVariableName:{}.",
+          params.getDefaultValue() == null ? "null" : params.getDefaultValue().getClass().toString(),
+          params.getDistinctId(), params.getExperimentVariableName());
+      return new Experiment<>(params.getDistinctId(), params.getIsLoginId(), params.getDefaultValue());
     }
     JsonNode experiment;
     //判断是否需要读取结果缓存
-    if (enableCache) {
-      experiment = experimentCacheManager.getExperimentResultByCache(distinctId, isLoginId, experimentVariableName);
+    if (params.getEnableCache()) {
+      experiment = experimentCacheManager.getExperimentResultByCache(params.getDistinctId(), params.getIsLoginId(),
+          params.getExperimentVariableName());
       //未命中缓存
       if (experiment == null) {
-        log.info("distinctId:{} experimentVariableName:{} not hit experiment cache,making network request.",
-            distinctId, experimentVariableName);
-        experiment = getABTestByHttp(distinctId, isLoginId, timeoutMilliseconds, properties);
-        experimentCacheManager.setExperimentResultCache(distinctId, isLoginId, experiment);
+        log.debug("Not hit experiment cache,making network request.distinctId:{} experimentVariableName:{}",
+            params.getDistinctId(), params.getExperimentVariableName());
+        experiment = getABTestByHttp(params.getDistinctId(), params.getIsLoginId(), params.getExperimentVariableName(),
+            params.getTimeoutMilliseconds(), params.getProperties(), params.getCustomProperties());
+        experimentCacheManager.setExperimentResultCache(params.getDistinctId(), params.getIsLoginId(), experiment);
       }
     } else {
-      experiment = getABTestByHttp(distinctId, isLoginId, timeoutMilliseconds, properties);
+      experiment = getABTestByHttp(params.getDistinctId(), params.getIsLoginId(), params.getExperimentVariableName(),
+          params.getTimeoutMilliseconds(), params.getProperties(), params.getCustomProperties());
     }
-    Experiment<T> result = convertExperiment(experiment, distinctId, isLoginId, experimentVariableName, defaultValue);
+    Experiment<T> result =
+        convertExperiment(experiment, params.getDistinctId(), params.getIsLoginId(), params.getExperimentVariableName(),
+            params.getDefaultValue());
     //判断是否需要自动触发上报事件
-    if (enableAutoTrackEvent) {
+    if (params.getEnableAutoTrackEvent()) {
       try {
         this.trackABTestTrigger(result, null);
       } catch (InvalidArgumentException e) {
-        log.error("distinctId:{} experimentVariableName:{} auto track ABTest event.",
-            distinctId, experimentVariableName, e);
+        log.error("Failed auto track ABTest event.distinctId:{};isLoginId:{};experimentVariableName:{}",
+            params.getDistinctId(), params.getIsLoginId(), params.getExperimentVariableName(), e);
       }
     }
     return result;
@@ -131,29 +129,30 @@ class SensorsABTestWorker {
    */
   <T> void trackABTestTrigger(Experiment<T> result, Map<String, Object> properties) throws InvalidArgumentException {
     if (result == null) {
-      log.info("track ABTest event experiment result is null.");
+      log.debug("The track ABTest event experiment result is null.");
       return;
     }
     if (result.getIsWhiteList() == null || result.getIsWhiteList() || result.getAbTestExperimentId() == null) {
-      log.info("distinctId:{} track ABTest event user not hit experiment or in the whiteList.", result.getDistinctId());
+      log.debug("The track ABTest event user not hit experiment or in the whiteList.distinctId:{}.",
+          result.getDistinctId());
       return;
     }
     //缓存中存在 A/B 事件
     if (eventCacheManager.judgeEventCacheExist(result.getDistinctId(), result.getAbTestExperimentId())) {
-      log.info("distinctId:{} track experimentId:{} event have been cached.",
+      log.debug("The event has been triggered.distinctId:{};experimentId:{}.",
           result.getDistinctId(), result.getAbTestExperimentId());
       return;
     }
     if (properties == null) {
-      properties = new HashMap<>(16);
+      properties = Maps.newHashMap();
     }
     properties.put(SensorsABTestConst.EXPERIMENT_ID, result.getAbTestExperimentId());
     properties.put(SensorsABTestConst.EXPERIMENT_GROUP_ID, result.getAbTestExperimentGroupId());
     //判断是否为当天首次上传，重启服务，升级 JDK 版本都会触发
-    String day = this.formatDate(Calendar.getInstance().getTime());
+    String day = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.format(Calendar.getInstance());
     if (trigger == null || trigger.isEmpty() || !day.equals(trigger)) {
       trigger = day;
-      List<String> versions = new ArrayList<>();
+      List<String> versions = Lists.newArrayList();
       versions.add(String.format("%s:%s", SensorsABTestConst.AB_TEST_EVENT_LIB_VERSION, SensorsABTestConst.VERSION));
       properties.put(SensorsABTestConst.LIB_PLUGIN_VERSION, versions);
     }
@@ -170,9 +169,9 @@ class SensorsABTestWorker {
    *
    * @return 网络请求成功, 并且返回对象状态为 SUCCESS 和 results 有值，则返回 JsonNode；否则返回 null
    */
-  private JsonNode getABTestByHttp(String distinctId, boolean isLoginId, int timeoutMilliseconds,
-      Map<String, Object> properties) {
-    Map<String, Object> params = new HashMap<>(16);
+  private JsonNode getABTestByHttp(String distinctId, boolean isLoginId, String experimentName, int timeoutMilliseconds,
+      Map<String, Object> properties, Map<String, Object> customProperties) {
+    Map<String, Object> params = Maps.newHashMap();
     if (isLoginId) {
       params.put("login_id", distinctId);
     } else {
@@ -181,10 +180,12 @@ class SensorsABTestWorker {
     params.put(SensorsABTestConst.PLATFORM, SensorsABTestConst.JAVA);
     params.put(SensorsABTestConst.VERSION_KEY, SensorsABTestConst.VERSION);
     if (properties == null) {
-      properties = new HashMap<>(16);
+      properties = Collections.emptyMap();
     }
     params.put("properties", properties);
+    params.put("param_name", experimentName);
     try {
+      params.put("custom_properties", ABTestUtil.customPropertiesHandler(customProperties));
       String strJson = objectMapper.writeValueAsString(params);
       String result = httpConsumer.consume(strJson, timeoutMilliseconds);
       JsonNode res = objectMapper.readTree(result);
@@ -193,6 +194,9 @@ class SensorsABTestWorker {
         return res;
       }
       log.error("distinctId:{} Server return error message:{}", distinctId, result);
+      return null;
+    } catch (InvalidArgumentException e) {
+      log.error(e.getMessage());
       return null;
     } catch (IOException e) {
       log.error("distinctId:{} failed to network request.", distinctId, e);
@@ -284,16 +288,12 @@ class SensorsABTestWorker {
     return null;
   }
 
-  private String formatDate(Date date) {
-    return new SimpleDateFormat("yyyy-MM-dd").format(date);
-  }
-
   public void shutdown() {
     if (httpConsumer != null) {
       try {
         httpConsumer.close();
       } catch (IOException e) {
-        log.error("close http consumer occurred error.", e);
+        log.error("Close http consumer occurred error.", e);
       }
     }
   }
