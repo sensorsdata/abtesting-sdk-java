@@ -3,7 +3,10 @@ package com.sensorsdata.analytics.javasdk.bean;
 import com.sensorsdata.analytics.javasdk.ISensorsAnalytics;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -14,6 +17,7 @@ import java.io.Serializable;
  * @version 1.0.0
  * @since 2021/06/09 16:16
  */
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ABGlobalConfig implements Serializable {
   private static final long serialVersionUID = 3285160955772051586L;
   /**
@@ -62,24 +66,11 @@ public class ABGlobalConfig implements Serializable {
   @Getter
   private final Integer maxPerRoute;
 
-  private ABGlobalConfig(Integer eventCacheTime, Integer eventCacheSize, Integer experimentCacheSize,
-      Integer experimentCacheTime, Boolean enableEventCache, String apiUrl, ISensorsAnalytics sensorsAnalytics,
-      Integer maxTotal, Integer maxPerRoute) {
-    this.eventCacheTime = eventCacheTime;
-    this.eventCacheSize = eventCacheSize;
-    this.experimentCacheSize = experimentCacheSize;
-    this.experimentCacheTime = experimentCacheTime;
-    this.enableEventCache = enableEventCache;
-    this.apiUrl = apiUrl;
-    this.sensorsAnalytics = sensorsAnalytics;
-    this.maxTotal = maxTotal;
-    this.maxPerRoute = maxPerRoute;
-  }
-
   public static Builder builder() {
     return new Builder();
   }
 
+  @NoArgsConstructor(access = AccessLevel.PRIVATE)
   public static class Builder {
     private Integer eventCacheTime;
     private Integer eventCacheSize;
@@ -90,9 +81,6 @@ public class ABGlobalConfig implements Serializable {
     private ISensorsAnalytics sensorsAnalytics;
     private Integer maxTotal;
     private Integer maxPerRoute;
-
-    private Builder() {
-    }
 
     public ABGlobalConfig build() throws InvalidArgumentException {
       if (apiUrl == null || apiUrl.length() == 0) {

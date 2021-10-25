@@ -2,8 +2,6 @@ package com.sensorsdata.analytics.javasdk.util;
 
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
-import org.apache.commons.lang3.time.DateFormatUtils;
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -23,7 +21,9 @@ public class ABTestUtil {
   /**
    * 自定义属性名匹配规则
    */
-  private static final Pattern pattern = Pattern.compile("^([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*$");
+  private static final Pattern pattern = Pattern.compile(
+      "^((?!^distinct_id$|^original_id$|^time$|^properties$|^id$|^first_id$|^second_id$|^users$|^events$|^event$|^user_id$|^date$|^datetime$|^user_group|^user_tag|^[0-9])[a-zA-Z0-9_]{0,99})$",
+      Pattern.CASE_INSENSITIVE);
 
   private ABTestUtil() {
   }
@@ -32,7 +32,7 @@ public class ABTestUtil {
     return value instanceof Integer || value instanceof String || value instanceof Boolean;
   }
 
-  public static <T> Map<String, Object> customPropertiesHandler(Map<String, Object> customProperties)
+  public static Map<String, Object> customPropertiesHandler(Map<String, Object> customProperties)
       throws InvalidArgumentException {
     if (customProperties == null || customProperties.isEmpty()) {
       return Collections.emptyMap();
@@ -67,9 +67,6 @@ public class ABTestUtil {
           throw new InvalidArgumentException(
               String.format("The property name %s of value is too long.max length is 8192.", key));
         }
-      }
-      if (value instanceof Date) {
-        tempMap.put(key, DateFormatUtils.format(((Date) value).getTime(), "yyyy-MM-dd HH:mm:ss:SSS"));
       }
       tempMap.put(key, value);
     }

@@ -74,11 +74,12 @@ class SensorsABTestWorker {
    */
   <T> Experiment<T> fetchABTest(Params<T> params) {
     if (params.getDistinctId() == null || params.getDistinctId().isEmpty()) {
-      log.info("DistinctId is empty or null,return defaultValue.");
+      log.info("The distinctId is empty or null,return defaultValue.");
       return new Experiment<>(params.getDistinctId(), params.getIsLoginId(), params.getDefaultValue());
     }
     if (params.getExperimentVariableName() == null || params.getExperimentVariableName().isEmpty()) {
-      log.info("ExperimentVariableName is empty or null,return defaultValue.distinctId:{}", params.getDistinctId());
+      log.info("The experimentVariableName is empty or null,return defaultValue.distinctId:{}.",
+          params.getDistinctId());
       return new Experiment<>(params.getDistinctId(), params.getIsLoginId(), params.getDefaultValue());
     }
     if (!ABTestUtil.assertDefaultValueType(params.getDefaultValue())) {
@@ -95,7 +96,7 @@ class SensorsABTestWorker {
           params.getExperimentVariableName());
       //未命中缓存
       if (experiment == null) {
-        log.debug("Not hit experiment cache,making network request.distinctId:{} experimentVariableName:{}",
+        log.debug("Not hit experiment cache,making network request.distinctId:{};experimentVariableName:{}.",
             params.getDistinctId(), params.getExperimentVariableName());
         experiment = getABTestByHttp(params.getDistinctId(), params.getIsLoginId(), params.getExperimentVariableName(),
             params.getTimeoutMilliseconds(), params.getProperties(), params.getCustomProperties());
@@ -187,19 +188,21 @@ class SensorsABTestWorker {
     try {
       params.put("custom_properties", ABTestUtil.customPropertiesHandler(customProperties));
       String strJson = objectMapper.writeValueAsString(params);
+      log.debug("The parameter for making a network request is {}.", strJson);
       String result = httpConsumer.consume(strJson, timeoutMilliseconds);
       JsonNode res = objectMapper.readTree(result);
       if (res != null && SensorsABTestConst.SUCCESS.equals(res.findValue(SensorsABTestConst.STATUS_KEY).asText())
           && res.findValue(SensorsABTestConst.RESULTS_KEY).size() > 0) {
         return res;
       }
-      log.error("distinctId:{} Server return error message:{}", distinctId, result);
+      log.error("The server return incorrect information:{};distinctId:{}.experimentName:{}",
+          result, distinctId, experimentName);
       return null;
     } catch (InvalidArgumentException e) {
       log.error(e.getMessage());
       return null;
     } catch (IOException e) {
-      log.error("distinctId:{} failed to network request.", distinctId, e);
+      log.error("Failed to network request.distinctId:{}", distinctId, e);
       return null;
     }
   }
@@ -212,7 +215,8 @@ class SensorsABTestWorker {
   private <T> Experiment<T> convertExperiment(JsonNode message, String distinctId, boolean isLoginId,
       String experimentVariableName, T defaultValue) {
     if (message == null) {
-      log.debug("distinctId:{} experiment result is null,return defaultValue.", distinctId);
+      log.debug("The experiment result is null,return defaultValue.distinctId:{};experimentVariableName:{}.",
+          distinctId, experimentVariableName);
       return new Experiment<>(distinctId, isLoginId, defaultValue);
     }
     JsonNode results = message.findValue(SensorsABTestConst.RESULTS_KEY);
@@ -234,8 +238,8 @@ class SensorsABTestWorker {
     }
     try {
       log.warn(
-          "distinctId:{} missing experiment,return defaultValue;experiment result:{},isLoginId:{},experimentVariableName:{},defaultValue:{}.",
-          distinctId, objectMapper.writeValueAsString(message), isLoginId, experimentVariableName, defaultValue);
+          "missing experiment,return defaultValue;experiment result:{},distinctId:{},isLoginId:{},experimentVariableName:{},defaultValue:{}.",
+          objectMapper.writeValueAsString(message), distinctId, isLoginId, experimentVariableName, defaultValue);
     } catch (JsonProcessingException e) {
       log.error("print log occurred error.", e);
     }
