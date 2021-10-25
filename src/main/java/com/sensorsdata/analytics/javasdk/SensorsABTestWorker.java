@@ -237,7 +237,7 @@ class SensorsABTestWorker {
       }
     }
     try {
-      log.warn(
+      log.info(
           "missing experiment,return defaultValue;experiment result:{},distinctId:{},isLoginId:{},experimentVariableName:{},defaultValue:{}.",
           objectMapper.writeValueAsString(message), distinctId, isLoginId, experimentVariableName, defaultValue);
     } catch (JsonProcessingException e) {
