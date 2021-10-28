@@ -1,7 +1,6 @@
 package com.sensorsdata.analytics.javasdk;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
@@ -26,12 +25,33 @@ public class ABTestUtilTest {
   public void testKey() {
     customProperties.put("distinct_id", "eeee");
     try {
-      final Map<String, Object> stringObjectMap = ABTestUtil.customPropertiesHandler(customProperties);
-      assertNull(stringObjectMap);
+      ABTestUtil.customPropertiesHandler(customProperties);
+      assertTrue(false);
     } catch (InvalidArgumentException e) {
       assertTrue(true);
     }
+  }
 
+  @Test
+  public void testDeviceIdKey() {
+    customProperties.put("device_id", "eeee");
+    try {
+      ABTestUtil.customPropertiesHandler(customProperties);
+      assertTrue(false);
+    } catch (InvalidArgumentException e) {
+      assertTrue(true);
+    }
+  }
+
+  @Test
+  public void testNullKey() {
+    customProperties.put(null, "111");
+    try {
+      ABTestUtil.customPropertiesHandler(customProperties);
+      assertTrue(false);
+    } catch (InvalidArgumentException e) {
+      assertTrue(true);
+    }
   }
 
   @Test
@@ -40,8 +60,8 @@ public class ABTestUtilTest {
         "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
     customProperties.put(key, "eeee");
     try {
-      final Map<String, Object> stringObjectMap = ABTestUtil.customPropertiesHandler(customProperties);
-      assertNull(stringObjectMap);
+      ABTestUtil.customPropertiesHandler(customProperties);
+      assertTrue(false);
     } catch (InvalidArgumentException e) {
       assertTrue(true);
     }

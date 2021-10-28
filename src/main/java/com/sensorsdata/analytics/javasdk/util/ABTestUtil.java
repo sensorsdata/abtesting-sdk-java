@@ -4,7 +4,6 @@ import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -22,7 +21,7 @@ public class ABTestUtil {
    * 自定义属性名匹配规则
    */
   private static final Pattern pattern = Pattern.compile(
-      "^((?!^distinct_id$|^original_id$|^time$|^properties$|^id$|^first_id$|^second_id$|^users$|^events$|^event$|^user_id$|^date$|^datetime$|^user_group|^user_tag|^[0-9])[a-zA-Z0-9_]{0,99})$",
+      "^((?!^distinct_id$|^original_id$|^time$|^properties$|^id$|^first_id$|^second_id$|^users$|^events$|^event$|^user_id$|^date$|^datetime$|^device_id$|^user_group|^user_tag|^[0-9])[a-zA-Z0-9_]{0,99})$",
       Pattern.CASE_INSENSITIVE);
 
   private ABTestUtil() {
@@ -37,8 +36,10 @@ public class ABTestUtil {
     if (customProperties == null || customProperties.isEmpty()) {
       return Collections.emptyMap();
     }
-    HashMap<String, Object> tempMap = new HashMap<>(customProperties.size());
     for (String key : customProperties.keySet()) {
+      if (key == null) {
+        throw new InvalidArgumentException("The property name is null.");
+      }
       if (key.length() > 100) {
         throw new InvalidArgumentException(String.format("The property name %s is too long, max length is 100.", key));
       }
@@ -68,9 +69,8 @@ public class ABTestUtil {
               String.format("The property name %s of value is too long.max length is 8192.", key));
         }
       }
-      tempMap.put(key, value);
     }
-    return tempMap;
+    return customProperties;
   }
 
 }
