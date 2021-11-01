@@ -5,27 +5,28 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.google.common.cache.LoadingCache;
-
 import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
 import com.sensorsdata.analytics.javasdk.cache.EventCacheManager;
 import com.sensorsdata.analytics.javasdk.cache.ExperimentCacheManager;
-import com.sensorsdata.analytics.javasdk.consumer.BatchConsumer;
 import com.sensorsdata.analytics.javasdk.consumer.ConcurrentLoggingConsumer;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
+import com.sensorsdata.analytics.javasdk.util.SensorsAnalyticsUtil;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.*;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Result;
-import org.junit.runner.RunWith;
-import org.junit.runner.notification.Failure;
-import org.junit.runners.Suite;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,8 +36,6 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2021/06/18 09:54
  */
-
-
 public class SensorsTest {
 
   public SensorsTest() throws IOException, InvalidArgumentException {
@@ -2149,6 +2148,149 @@ public class SensorsTest {
     assertEquals(0, eventCacheManager.getCacheSize());
   }
 
+
+  String ABUrl =
+      "http://abtesting.saas.debugbox.sensorsdata.cn/api/v2/abtest/online/results?project-key=C6C0A59DA0923C4C813F0FD62CBA342AC60350EE";
+
+  /**
+   * FastFetchABTest 传参检查
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void checkAllParamsWithFast() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> properties = Maps.newHashMap();
+    properties.put("test", "test");
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+    Experiment<String> experiment =
+        sensorsABTest.fastFetchABTest("123", true, "fz", customProperties,
+            "eee", true, 3000, properties);
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+  }
+
+  /**
+   * AsyncFetchABTest 传参检查
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void checkAllParamsWithAsync() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> properties = Maps.newHashMap();
+    properties.put("test", "test");
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+    Experiment<String> experiment =
+        sensorsABTest.asyncFetchABTest("123", true, "fz", customProperties,
+            "eee", true, 3000, properties);
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+  }
+
+  /**
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地有缓存
+   */
+  @Test
+  public void checkAllParamsHasCache()
+      throws NoSuchFieldException, IllegalAccessException, InvalidArgumentException, IOException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    ExperimentCacheManager experimentCacheManager =
+        getExperimentCacheManagerByReflect(getSensorsABTestWorkerByReflect(sensorsABTest));
+    ObjectMapper objectMapper = SensorsAnalyticsUtil.getJsonObjectMapper();
+    String str =
+        "{\"status\":\"SUCCESS\",\"results\":[{\"abtest_experiment_id\":\"34\",\"abtest_experiment_group_id\":\"1\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"ljy_release\",\"type\":\"INTEGER\",\"value\":\"2\"}]},{\"abtest_experiment_id\":\"60\",\"abtest_experiment_group_id\":\"1\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"bbb\",\"type\":\"INTEGER\",\"value\":\"2\"}]},{\"abtest_experiment_id\":\"61\",\"abtest_experiment_group_id\":\"1\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"fz\",\"type\":\"STRING\",\"value\":\"black\"}]},{\"abtest_experiment_id\":\"47\",\"abtest_experiment_group_id\":\"0\",\"is_control_group\":true,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"cs_ls_1028\",\"type\":\"STRING\",\"value\":\"1\"}]}]}";
+    //设置缓存
+    experimentCacheManager.setExperimentResultCache("123", true, objectMapper.readTree(str));
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee");
+    assertNotNull(experiment);
+    assertEquals("61", experiment.getAbTestExperimentId());
+    assertEquals("black", experiment.getResult());
+  }
+
+  /**
+   * 属性名不合法检查
+   * <p>
+   * -特殊字符
+   */
+  @Test
+  public void checkParamsNameWithInvalidChar() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("$age", 15);
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", customProperties, "eee");
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertEquals("eee", experiment.getResult());
+  }
+
+  /**
+   * 属性名不合法检查
+   * <p>
+   * -数字开头
+   */
+  @Test
+  public void checkParamsNameWithNumber() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("0age", 15);
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", customProperties, "eee");
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertEquals("eee", experiment.getResult());
+  }
+
+  /**
+   * 属性值不合法检查
+   * <p>
+   * -数值 list
+   */
+  @Test
+  public void checkParamsTypeWithInvalidType() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    List<Integer> integers = Lists.newArrayList();
+    integers.add(111);
+    integers.add(222);
+    customProperties.put("age", integers);
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", customProperties, "eee");
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertEquals("eee", experiment.getResult());
+  }
+
+  /**
+   * 属性值不合法检查
+   * <p>
+   * -自定义属性传{“a”:null}
+   */
+  @Test
+  public void checkParamsTypeWithNull() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", null);
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", customProperties, "eee");
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertEquals("eee", experiment.getResult());
+  }
 
 
   private SensorsABTestWorker getSensorsABTestWorkerByReflect(ISensorsABTest abTest)
