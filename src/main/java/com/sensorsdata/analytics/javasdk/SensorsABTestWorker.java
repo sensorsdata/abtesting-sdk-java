@@ -184,9 +184,12 @@ class SensorsABTestWorker {
       properties = Collections.emptyMap();
     }
     params.put("properties", properties);
-    params.put("param_name", experimentName);
     try {
-      params.put("custom_properties", ABTestUtil.customPropertiesHandler(customProperties));
+      Map<String, Object> objMap = ABTestUtil.customPropertiesHandler(customProperties);
+      if (!objMap.isEmpty()) {
+        params.put("custom_properties", objMap);
+        params.put("param_name", experimentName);
+      }
       String strJson = objectMapper.writeValueAsString(params);
       log.debug("The parameter for making a network request is {}.", strJson);
       String result = httpConsumer.consume(strJson, timeoutMilliseconds);
