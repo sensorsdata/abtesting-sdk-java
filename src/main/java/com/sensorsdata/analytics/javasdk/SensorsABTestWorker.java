@@ -99,12 +99,12 @@ class SensorsABTestWorker {
         log.debug("Not hit experiment cache,making network request.distinctId:{};experimentVariableName:{}.",
             params.getDistinctId(), params.getExperimentVariableName());
         experiment = getABTestByHttp(params.getDistinctId(), params.getIsLoginId(), params.getExperimentVariableName(),
-            params.getTimeoutMilliseconds(), params.getProperties(), params.getCustomProperties());
+            params.getTimeoutMilliseconds(), params.getCustomProperties());
         experimentCacheManager.setExperimentResultCache(params.getDistinctId(), params.getIsLoginId(), experiment);
       }
     } else {
       experiment = getABTestByHttp(params.getDistinctId(), params.getIsLoginId(), params.getExperimentVariableName(),
-          params.getTimeoutMilliseconds(), params.getProperties(), params.getCustomProperties());
+          params.getTimeoutMilliseconds(), params.getCustomProperties());
     }
     Experiment<T> result =
         convertExperiment(experiment, params.getDistinctId(), params.getIsLoginId(), params.getExperimentVariableName(),
@@ -171,7 +171,7 @@ class SensorsABTestWorker {
    * @return 网络请求成功, 并且返回对象状态为 SUCCESS 和 results 有值，则返回 JsonNode；否则返回 null
    */
   private JsonNode getABTestByHttp(String distinctId, boolean isLoginId, String experimentName, int timeoutMilliseconds,
-      Map<String, Object> properties, Map<String, Object> customProperties) {
+      Map<String, Object> customProperties) {
     Map<String, Object> params = Maps.newHashMap();
     if (isLoginId) {
       params.put("login_id", distinctId);
@@ -180,10 +180,7 @@ class SensorsABTestWorker {
     }
     params.put(SensorsABTestConst.PLATFORM, SensorsABTestConst.JAVA);
     params.put(SensorsABTestConst.VERSION_KEY, SensorsABTestConst.VERSION);
-    if (properties == null) {
-      properties = Collections.emptyMap();
-    }
-    params.put("properties", properties);
+    params.put("properties", Collections.emptyMap());
     try {
       Map<String, Object> objMap = ABTestUtil.customPropertiesHandler(customProperties);
       if (!objMap.isEmpty()) {
