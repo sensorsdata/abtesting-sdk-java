@@ -99,12 +99,12 @@ class SensorsABTestWorker {
         log.debug("Not hit experiment cache,making network request.distinctId:{};experimentVariableName:{}.",
             params.getDistinctId(), params.getExperimentVariableName());
         experiment = getABTestByHttp(params.getDistinctId(), params.getIsLoginId(), params.getExperimentVariableName(),
-            params.getTimeoutMilliseconds(), params.getCustomProperties());
+            params.getTimeoutMilliseconds(), params.getProperties());
         experimentCacheManager.setExperimentResultCache(params.getDistinctId(), params.getIsLoginId(), experiment);
       }
     } else {
       experiment = getABTestByHttp(params.getDistinctId(), params.getIsLoginId(), params.getExperimentVariableName(),
-          params.getTimeoutMilliseconds(), params.getCustomProperties());
+          params.getTimeoutMilliseconds(), params.getProperties());
     }
     Experiment<T> result =
         convertExperiment(experiment, params.getDistinctId(), params.getIsLoginId(), params.getExperimentVariableName(),

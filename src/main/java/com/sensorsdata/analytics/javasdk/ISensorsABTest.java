@@ -71,12 +71,12 @@ public interface ISensorsABTest {
    * @param isLoginId              是否为登录ID true:是登录ID，false：匿名ID
    * @param experimentVariableName 试验变量名称
    * @param defaultValue           未命中试验，返回默认值（支持数据类型：number｜boolean｜String｜json）
-   * @param customProperties       自定义属性
+   * @param properties             自定义属性
    * @param <T>                    支持数据类型：number｜boolean｜String｜json
    * @return {@code Experiment<T> }
    */
   <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
-      T defaultValue, Map<String, Object> customProperties);
+      T defaultValue, Map<String, Object> properties);
 
 
   /**
@@ -90,12 +90,12 @@ public interface ISensorsABTest {
    * @param experimentVariableName 试验变量名称
    * @param defaultValue           未命中试验，返回默认值（支持数据类型：number｜boolean｜String｜json）
    * @param enableAutoTrackEvent   是否开启自动上报 $ABTestTrigger 事件
-   * @param customProperties       自定义属性
+   * @param properties             自定义属性
    * @param <T>                    支持数据类型：number｜boolean｜String｜json
    * @return {@code Experiment<T> }
    */
   <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
-      T defaultValue, boolean enableAutoTrackEvent, Map<String, Object> customProperties);
+      T defaultValue, boolean enableAutoTrackEvent, Map<String, Object> properties);
 
   /**
    * 立即从服务端请求，忽略内存缓存
@@ -126,12 +126,12 @@ public interface ISensorsABTest {
    * @param experimentVariableName 试验变量名称
    * @param defaultValue           未命中试验，返回默认值（支持数据类型：number｜boolean｜String｜json）
    * @param timeoutMilliseconds    请求超时设置 ms
-   * @param customProperties       自定义属性
+   * @param properties             自定义属性
    * @param <T>                    支持数据类型：number｜boolean｜String｜json
    * @return {@code Experiment<T> }
    */
   <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
-      T defaultValue, int timeoutMilliseconds, Map<String, Object> customProperties);
+      T defaultValue, int timeoutMilliseconds, Map<String, Object> properties);
 
   /**
    * 立即从服务端请求，忽略内存缓存
@@ -145,12 +145,12 @@ public interface ISensorsABTest {
    * @param defaultValue           未命中试验，返回默认值（支持数据类型：number｜boolean｜String｜json）
    * @param enableAutoTrackEvent   是否开启自动上报 $ABTestTrigger 事件
    * @param timeoutMilliseconds    请求超时设置 ms
-   * @param customProperties       自定义属性
+   * @param properties       自定义属性
    * @param <T>                    支持数据类型：number｜boolean｜String｜json
    * @return {@code Experiment<T> }
    */
   <T> Experiment<T> asyncFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
-      T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> customProperties);
+      T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> properties);
 
   /**
    * 优先读取内存缓存，缓存不存在时从再服务端获取试验数据
@@ -212,12 +212,12 @@ public interface ISensorsABTest {
    * @param isLoginId              是否为登录ID true:是登录ID，false：匿名ID
    * @param experimentVariableName 试验变量名称
    * @param defaultValue           未命中试验，返回默认值（支持数据类型：number｜boolean｜String｜json）
-   * @param customProperties       自定义属性
+   * @param properties             自定义属性
    * @param <T>                    支持数据类型：number｜boolean｜String｜json
    * @return {@code Experiment<T> }
    */
   <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
-      T defaultValue, Map<String, Object> customProperties);
+      T defaultValue, Map<String, Object> properties);
 
   /**
    * 优先读取内存缓存，缓存不存在时从再服务端获取试验数据
@@ -230,12 +230,12 @@ public interface ISensorsABTest {
    * @param experimentVariableName 试验变量名称
    * @param defaultValue           未命中试验，返回默认值（支持数据类型：number｜boolean｜String｜json）
    * @param enableAutoTrackEvent   是否开启自动上报 $ABTestTrigger 事件
-   * @param customProperties       自定义属性
+   * @param properties             自定义属性
    * @param <T>                    支持数据类型：number｜boolean｜String｜json
    * @return {@code Experiment<T> }
    */
   <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
-      T defaultValue, boolean enableAutoTrackEvent, Map<String, Object> customProperties);
+      T defaultValue, boolean enableAutoTrackEvent, Map<String, Object> properties);
 
   /**
    * 优先读取内存缓存，缓存不存在时从再服务端获取试验数据
@@ -266,12 +266,12 @@ public interface ISensorsABTest {
    * @param experimentVariableName 试验变量名称
    * @param defaultValue           未命中试验，返回默认值（支持数据类型：number｜boolean｜String｜json）
    * @param timeoutMilliseconds    请求超时设置 ms
-   * @param customProperties       自定义属性
+   * @param properties             自定义属性
    * @param <T>                    支持数据类型：number｜boolean｜String｜json
    * @return {@code Experiment<T> }
    */
   <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
-      T defaultValue, int timeoutMilliseconds, Map<String, Object> customProperties);
+      T defaultValue, int timeoutMilliseconds, Map<String, Object> properties);
 
   /**
    * 优先读取内存缓存，缓存不存在时从再服务端获取试验数据
@@ -285,12 +285,12 @@ public interface ISensorsABTest {
    * @param defaultValue           未命中试验，返回默认值（支持数据类型：number｜boolean｜String｜json）
    * @param enableAutoTrackEvent   是否开启自动上报 $ABTestTrigger 事件
    * @param timeoutMilliseconds    请求超时设置 ms
-   * @param customProperties       自定义属性
+   * @param properties             自定义属性
    * @param <T>                    支持数据类型：number｜boolean｜String｜json
    * @return {@code Experiment<T> }
    */
   <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
-      T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> customProperties);
+      T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> properties);
 
 
   /**
@@ -307,10 +307,10 @@ public interface ISensorsABTest {
    *
    * @param <T>        支持数据类型：number｜boolean｜String｜json
    * @param experiment 试验结果
-   * @param customProperties 请求参数
+   * @param properties 请求参数
    * @throws com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException 参数校验不合法抛出该异常
    */
-  <T> void trackABTestTrigger(Experiment<T> experiment, Map<String, Object> customProperties)
+  <T> void trackABTestTrigger(Experiment<T> experiment, Map<String, Object> properties)
       throws InvalidArgumentException;
 
   void shutdown();

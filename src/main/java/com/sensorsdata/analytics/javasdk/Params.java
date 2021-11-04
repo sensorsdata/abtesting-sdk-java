@@ -46,7 +46,7 @@ class Params<T> {
   /**
    * 自定义属性
    */
-  Map<String, Object> customProperties;
+  Map<String, Object> properties;
 
   public static <T> Builder<T> builder() {
     return new Builder<>();
@@ -60,7 +60,7 @@ class Params<T> {
     Boolean enableAutoTrackEvent;
     Integer timeoutMilliseconds;
     Boolean enableCache;
-    Map<String, Object> customProperties;
+    Map<String, Object> properties;
 
     private Builder() {
     }
@@ -76,7 +76,7 @@ class Params<T> {
         enableCache = false;
       }
       return new Params<>(distinctId, isLoginId, experimentVariableName, defaultValue, enableAutoTrackEvent,
-          timeoutMilliseconds, enableCache, customProperties);
+          timeoutMilliseconds, enableCache, properties);
     }
 
     public Params.Builder<T> distinctId(String distinctId) {
@@ -114,8 +114,8 @@ class Params<T> {
       return this;
     }
 
-    public Params.Builder<T> customProperties(Map<String, Object> customProperties) {
-      this.customProperties = customProperties;
+    public Params.Builder<T> properties(Map<String, Object> properties) {
+      this.properties = properties;
       return this;
     }
   }
