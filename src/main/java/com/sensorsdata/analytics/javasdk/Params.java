@@ -40,10 +40,6 @@ class Params<T> {
    */
   Integer timeoutMilliseconds;
   /**
-   * 接口请求参数
-   */
-  Map<String, Object> properties;
-  /**
    * 是否查询缓存,默认不查询
    */
   Boolean enableCache;
@@ -63,7 +59,6 @@ class Params<T> {
     T defaultValue;
     Boolean enableAutoTrackEvent;
     Integer timeoutMilliseconds;
-    Map<String, Object> properties;
     Boolean enableCache;
     Map<String, Object> customProperties;
 
@@ -81,7 +76,7 @@ class Params<T> {
         enableCache = false;
       }
       return new Params<>(distinctId, isLoginId, experimentVariableName, defaultValue, enableAutoTrackEvent,
-          timeoutMilliseconds, properties, enableCache, customProperties);
+          timeoutMilliseconds, enableCache, customProperties);
     }
 
     public Params.Builder<T> distinctId(String distinctId) {
@@ -111,11 +106,6 @@ class Params<T> {
 
     public Params.Builder<T> timeoutMilliseconds(int timeoutMilliseconds) {
       this.timeoutMilliseconds = timeoutMilliseconds;
-      return this;
-    }
-
-    public Params.Builder<T> properties(Map<String, Object> properties) {
-      this.properties = properties;
       return this;
     }
 

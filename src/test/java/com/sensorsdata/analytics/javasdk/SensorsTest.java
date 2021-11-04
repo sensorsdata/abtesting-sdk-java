@@ -2163,13 +2163,11 @@ public class SensorsTest {
   public void checkAllParamsWithFast() throws InvalidArgumentException {
     ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
     ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
-    Map<String, Object> properties = Maps.newHashMap();
-    properties.put("test", "test");
     Map<String, Object> customProperties = Maps.newHashMap();
     customProperties.put("age", 15);
     Experiment<String> experiment =
-        sensorsABTest.fastFetchABTest("123", true, "fz", customProperties,
-            "eee", true, 3000, properties);
+        sensorsABTest.fastFetchABTest("123", true, "fz",
+            "eee", true, 3000, customProperties);
     assertNotNull(experiment);
     assertNotNull(experiment.getAbTestExperimentId());
     assertNotNull(experiment.getResult());
@@ -2186,13 +2184,11 @@ public class SensorsTest {
   public void checkAllParamsWithAsync() throws InvalidArgumentException {
     ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
     ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
-    Map<String, Object> properties = Maps.newHashMap();
-    properties.put("test", "test");
     Map<String, Object> customProperties = Maps.newHashMap();
     customProperties.put("age", 15);
     Experiment<String> experiment =
-        sensorsABTest.asyncFetchABTest("123", true, "fz", customProperties,
-            "eee", true, 3000, properties);
+        sensorsABTest.asyncFetchABTest("123", true, "fz",
+            "eee", true, 3000, customProperties);
     assertNotNull(experiment);
     assertNotNull(experiment.getAbTestExperimentId());
     assertNotNull(experiment.getResult());
@@ -2232,7 +2228,7 @@ public class SensorsTest {
     ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
     Map<String, Object> customProperties = Maps.newHashMap();
     customProperties.put("$age", 15);
-    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", customProperties, "eee");
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
     assertNotNull(experiment);
     assertNull(experiment.getAbTestExperimentId());
     assertEquals("eee", experiment.getResult());
@@ -2249,7 +2245,7 @@ public class SensorsTest {
     ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
     Map<String, Object> customProperties = Maps.newHashMap();
     customProperties.put("0age", 15);
-    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", customProperties, "eee");
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
     assertNotNull(experiment);
     assertNull(experiment.getAbTestExperimentId());
     assertEquals("eee", experiment.getResult());
@@ -2269,7 +2265,7 @@ public class SensorsTest {
     integers.add(111);
     integers.add(222);
     customProperties.put("age", integers);
-    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", customProperties, "eee");
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
     assertNotNull(experiment);
     assertNull(experiment.getAbTestExperimentId());
     assertEquals("eee", experiment.getResult());
@@ -2286,7 +2282,7 @@ public class SensorsTest {
     ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
     Map<String, Object> customProperties = Maps.newHashMap();
     customProperties.put("age", null);
-    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", customProperties, "eee");
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
     assertNotNull(experiment);
     assertNull(experiment.getAbTestExperimentId());
     assertEquals("eee", experiment.getResult());
