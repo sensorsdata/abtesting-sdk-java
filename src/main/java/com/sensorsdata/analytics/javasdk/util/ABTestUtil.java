@@ -6,6 +6,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -38,7 +39,8 @@ public class ABTestUtil {
     if (customProperties == null || customProperties.isEmpty()) {
       return Collections.emptyMap();
     }
-    for (Map.Entry<String, Object> entry : customProperties.entrySet()) {
+    Map<String, Object> newProperties = new HashMap<>(customProperties);
+    for (Map.Entry<String, Object> entry : newProperties.entrySet()) {
       if (entry.getKey() == null) {
         throw new InvalidArgumentException("The property name is null.");
       }
@@ -65,7 +67,7 @@ public class ABTestUtil {
                 "The property name %s should be a list of String.The current type is %s.", entry.getKey(), type));
           }
         }
-        customProperties.put(entry.getKey(), ArrayUtils.toString(value));
+        newProperties.put(entry.getKey(), ArrayUtils.toString(value));
       }
       if (value instanceof String) {
         if (String.valueOf(value).length() > 8192) {
@@ -74,7 +76,7 @@ public class ABTestUtil {
         }
       }
     }
-    return customProperties;
+    return newProperties;
   }
 
 }
