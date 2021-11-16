@@ -69,7 +69,7 @@ class Params<T> {
       if (enableAutoTrackEvent == null) {
         enableAutoTrackEvent = true;
       }
-      if (timeoutMilliseconds == null) {
+      if (timeoutMilliseconds == null || timeoutMilliseconds <= 0) {
         timeoutMilliseconds = 3000;
       }
       if (enableCache == null) {
