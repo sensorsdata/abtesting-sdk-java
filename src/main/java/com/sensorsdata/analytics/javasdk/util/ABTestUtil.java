@@ -2,6 +2,8 @@ package com.sensorsdata.analytics.javasdk.util;
 
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -36,37 +38,39 @@ public class ABTestUtil {
     if (customProperties == null || customProperties.isEmpty()) {
       return Collections.emptyMap();
     }
-    for (String key : customProperties.keySet()) {
-      if (key == null) {
+    for (Map.Entry<String, Object> entry : customProperties.entrySet()) {
+      if (entry.getKey() == null) {
         throw new InvalidArgumentException("The property name is null.");
       }
-      if (key.length() > 100) {
-        throw new InvalidArgumentException(String.format("The property name %s is too long, max length is 100.", key));
+      if (entry.getKey().length() > 100) {
+        throw new InvalidArgumentException(
+            String.format("The property name %s is too long, max length is 100.", entry.getKey()));
       }
-      if (!pattern.matcher(key).matches()) {
-        throw new InvalidArgumentException(String.format("The property name %s is invalid format.", key));
+      if (!pattern.matcher(entry.getKey()).matches()) {
+        throw new InvalidArgumentException(String.format("The property name %s is invalid format.", entry.getKey()));
       }
-      Object value = customProperties.get(key);
+      Object value = entry.getValue();
       if (!(value instanceof Number) && !(value instanceof Date) && !(value instanceof String)
           && !(value instanceof Boolean) && !(value instanceof List<?>)) {
         String type = value == null ? "null" : value.getClass().toString();
         throw new InvalidArgumentException(String.format(
             "The property name %s should be a basic type: Number, String, Date, Boolean, List<String>.The current type is %s.",
-            key, type));
+            entry.getKey(), type));
       }
       if (value instanceof List<?>) {
         for (Object element : (List<?>) value) {
           if (!(element instanceof String)) {
             String type = element == null ? "null" : value.getClass().toString();
             throw new InvalidArgumentException(String.format(
-                "The property name %s should be a list of String.The current type is %s.", key, type));
+                "The property name %s should be a list of String.The current type is %s.", entry.getKey(), type));
           }
         }
+        customProperties.put(entry.getKey(), ArrayUtils.toString(value));
       }
       if (value instanceof String) {
         if (String.valueOf(value).length() > 8192) {
           throw new InvalidArgumentException(
-              String.format("The property name %s of value is too long.max length is 8192.", key));
+              String.format("The property name %s of value is too long.max length is 8192.", entry.getKey()));
         }
       }
     }
