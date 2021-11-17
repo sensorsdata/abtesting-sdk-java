@@ -5,10 +5,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.oracle.tools.packager.Log;
 import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
 import com.sensorsdata.analytics.javasdk.cache.EventCacheManager;
 import com.sensorsdata.analytics.javasdk.cache.ExperimentCacheManager;
+import com.sensorsdata.analytics.javasdk.consumer.BatchConsumer;
 import com.sensorsdata.analytics.javasdk.consumer.ConcurrentLoggingConsumer;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import com.sensorsdata.analytics.javasdk.util.SensorsAnalyticsUtil;
@@ -17,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,9 +28,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * 顶层接口，对外暴露的方法测试类
@@ -36,6 +39,7 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2021/06/18 09:54
  */
+@Slf4j
 public class SensorsTest {
 
   public SensorsTest() throws IOException, InvalidArgumentException {
@@ -43,10 +47,12 @@ public class SensorsTest {
 
   //初始化神策分析 SDK
   final ISensorsAnalytics sa = new SensorsAnalytics(new ConcurrentLoggingConsumer("file.log"));
-//    String serverUrl = "http://localhost/sa?project=default";
+
+    String serverUrl = "http://10.129.129.19:8106/sa?project=default";
 //    final ISensorsAnalytics sa = new SensorsAnalytics(new BatchConsumer(serverUrl));
 
-  String url = "http://localhost/sa?project=default";
+//  String url = "http://abtesting.saas.debugbox.sensorsdata.cn/api/v2/abtest/online/results?project-key=C6C0A59DA0923C4C813F0FD62CBA342AC60350EE";
+  String url = "http://abtesting.saas.debugbox.sensorsdata.cn/api/v2/abtest/online/results?project-key=005EB527E206FE552CDCA20462CB17CF52662DE3";
 
   //构建配置 AB Testing 试验全局参数
   ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder()
@@ -60,18 +66,22 @@ public class SensorsTest {
   //试验名
   String experimentName = "int";
 
+  ISensorsABTest sensorsABTest;
+
+  String distinctIDVar = "xc";
+  int var = 0;
 
   //execute for each test, before executing test
   @Before
   public void before() throws NoSuchFieldException, IllegalAccessException {
     System.out.println("in before");
-    final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
+    sensorsABTest = new SensorsABTest(abGlobalConfig);
     ExperimentCacheManager cacheManager =
-        getExperimentCacheManagerByReflect(getSensorsABTestWorkerByReflect(abTest));
+        getExperimentCacheManagerByReflect(getSensorsABTestWorkerByReflect(sensorsABTest));
     getExperimentResultCacheByReflect(cacheManager).invalidateAll(); //强制清除实验缓存
 
     EventCacheManager eventCacheManager =
-        getEventCacheManagerByReflect(getSensorsABTestWorkerByReflect(abTest));
+        getEventCacheManagerByReflect(getSensorsABTestWorkerByReflect(sensorsABTest));
 
     getEventCacheByReflect(eventCacheManager).invalidateAll(); //强制清除事件缓存
 
@@ -80,7 +90,23 @@ public class SensorsTest {
   //execute for each test, after executing test
   @After
   public void after() {
-    System.out.println("in after");
+    var++;
+    distinctIDVar += var;
+    System.out.println("in after:" + distinctIDVar);
+  }
+
+  public static String getTimeStamp() {
+    Long timeStamp = System.currentTimeMillis();  //获取当前时间戳
+    SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:S");
+    String sd = sdf.format(new Date(Long.parseLong(String.valueOf(timeStamp))));      // 时间戳转换成时间
+    return sd + " ";
+  }
+
+
+  public static String getTimeStamp(Long timeStamp) {
+    SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:S");
+    String sd = sdf.format(new Date(Long.parseLong(String.valueOf(timeStamp))));      // 时间戳转换成时间
+    return sd + " ";
   }
 
   /**
@@ -104,7 +130,7 @@ public class SensorsTest {
     //初始化 AB Testing SDK
     final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
 //        Experiment<String> result = abTest.asyncFetchABTest(distinctId, false, experimentName, "{\"color\":\"grey\"}");
-    Experiment<Integer> result = abTest.asyncFetchABTest(distinctId, false, experimentName, -1);
+    Experiment<Integer> result = abTest.asyncFetchABTest(distinctId, false, "a", -1);
     System.out.println(" ========== " + result.getResult());
     assertNotNull(result);
     assertNotNull(result.getDistinctId());
@@ -144,7 +170,7 @@ public class SensorsTest {
   public void asyncFetchABTestReturnTimeout_1() throws IOException, InvalidArgumentException {
     //构建配置 AB Testing 试验全局参数
     ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder()
-        .setApiUrl("http://localhost:8080/timeoutTest")                //分流试验地址
+        .setApiUrl("http://localhost:8887/timeoutTest")                //分流试验地址
         .setSensorsAnalytics(sa)       //神策分析 SDK 实例
         .enableEventCache(true)
         .build();
@@ -152,7 +178,7 @@ public class SensorsTest {
     //初始化 AB Testing SDK
     final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
 //        Experiment<String> result = abTest.asyncFetchABTest(distinctId, false, experimentName, "{\"color\":\"grey\"}");
-    Experiment<Integer> result = abTest.asyncFetchABTest(distinctId, false, experimentName, -1, -1);
+    Experiment<Integer> result = abTest.asyncFetchABTest(distinctId, false, experimentName, -1, 0);
     System.out.println(" ========== " + result.getResult());
     assertNotNull(result);
     assertNotNull(result.getDistinctId());
@@ -282,8 +308,11 @@ public class SensorsTest {
     //初始化 AB Testing SDK
     final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
 //        Experiment<String> result = abTest.asyncFetchABTest(distinctId, false, experimentName, "grey", false);
-    String experimentName = "test_int";
+    String experimentName = "pyy_int";
     Experiment<Integer> result = abTest.fastFetchABTest(distinctId, false, experimentName, -1, false);
+    System.out.println("======= result: " + result.getResult());
+
+   result = abTest.fastFetchABTest(distinctId, false, experimentName, -1, false);
     System.out.println("======= result: " + result.getResult());
 
     assertEquals(distinctId, result.getDistinctId());
@@ -386,6 +415,21 @@ public class SensorsTest {
     assertEquals(0, cacheManager.getCacheSize());
 
     assertNotNull(result.getResult());
+  }
+
+  /**
+   * 验证配置有效值后，初始化正确后调用 AsyncFetchABTest 且缓存不存储
+   */
+  @Test
+  public void asyncFetchABTesReturnResultList()
+          throws InvalidArgumentException, IOException, NoSuchFieldException, IllegalAccessException {
+    //初始化 AB Testing SDK
+    final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
+    String experimentName = "test_bool";
+    List<String> list = new ArrayList<>();
+    Experiment<List<String>> result = abTest.asyncFetchABTest(distinctId, false, experimentName, list);
+    System.out.println("======= result: " + result.getResult());
+
   }
 
   /**
@@ -709,6 +753,72 @@ public class SensorsTest {
   }
 
   /**
+   * fastFetchABTest 参数值为异常值- defaultValue = ""
+   */
+  @Test
+  public void fastFetchABTest_InvaildParam()
+          throws IOException, InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+
+    //初始化 AB Testing SDK
+
+    String distinctId = "abc";
+
+    final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
+    Experiment<Integer> result = abTest.fastFetchABTest(distinctId, true, experimentName, null);
+    System.out.println(result.getResult());
+  }
+
+  /**
+   * fastFetchABTest 参数值为异常值- defaultValue = ""
+   */
+  @Test
+  public void asyncFetchABTest_InvalidParam_defaultValue()
+          throws IOException, InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+
+    //初始化 AB Testing SDK
+
+    String distinctId = "abc";
+
+    final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
+    Experiment<String> result = abTest.asyncFetchABTest(distinctId, true, experimentName, "");
+    System.out.println(result.getResult());
+  }
+
+  /**
+   * fastFetchABTest 参数值为异常值- defaultValue = ""
+   */
+  @Test
+  public void asyncFetchABTest_InvalidParam_defaultValue_null()
+          throws IOException, InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+
+    //初始化 AB Testing SDK
+
+    String distinctId = "abc";
+
+    final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
+    Experiment<String> result = abTest.asyncFetchABTest(distinctId, true, experimentName, null);
+    System.out.println(result.getResult());
+  }
+
+  /**
+   * fastFetchABTest 参数值为异常值- distinctId = ""
+   */
+  @Test
+  public void fastFetchABTest_InvaildParam002()
+          throws IOException, InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+
+    //初始化 AB Testing SDK
+    String distinctId = "abc";
+    final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
+
+    ArrayList<String> list = new ArrayList<>();
+    list.add("qqq");
+    list.add("www");
+    Experiment<ArrayList<String>> result = abTest.fastFetchABTest(distinctId, true, experimentName, list);
+    System.out.println(result.getResult());
+  }
+
+  /**
    * 当用户不在白名单内——首次触发 asyncFetchABTest
    */
   @Test
@@ -788,8 +898,8 @@ public class SensorsTest {
       throws IOException, InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
     //初始化 AB Testing SDK
     final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
-//        Experiment<String> result = abTest.asyncFetchABTest(distinctId, false, experimentName, "grey", false);
-    Experiment<Integer> result = abTest.asyncFetchABTest(distinctId, false, null, -1, true);
+        Experiment<String> result = abTest.asyncFetchABTest(distinctId, false, null, "grey");
+//    Experiment<Integer> result = abTest.asyncFetchABTest(distinctId, false, null, -1, true);
     System.out.println("======= " + result.getResult());
   }
 
@@ -801,8 +911,8 @@ public class SensorsTest {
       throws IOException, InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
     //初始化 AB Testing SDK
     final ISensorsABTest abTest = new SensorsABTest(abGlobalConfig);
-//        Experiment<String> result = abTest.asyncFetchABTest(distinctId, false, experimentName, "grey", false);
-    Experiment<Integer> result = abTest.fastFetchABTest(distinctId, false, "", -1, true);
+    Experiment<String> result = abTest.asyncFetchABTest(distinctId, false, "", "grey");
+    Experiment<Integer> result1 = abTest.fastFetchABTest(distinctId, false, "", -1, true);
     System.out.println("======= " + result.getResult());
   }
 
@@ -2152,6 +2262,9 @@ public class SensorsTest {
   String ABUrl =
       "http://abtesting.saas.debugbox.sensorsdata.cn/api/v2/abtest/online/results?project-key=C6C0A59DA0923C4C813F0FD62CBA342AC60350EE";
 
+
+
+
   /**
    * FastFetchABTest 传参检查
    * <p>
@@ -2168,9 +2281,139 @@ public class SensorsTest {
     Experiment<String> experiment =
         sensorsABTest.fastFetchABTest("123", true, "fz",
             "eee", true, 3000, customProperties);
+
+    System.out.println(experiment.getResult());
     assertNotNull(experiment);
     assertNotNull(experiment.getAbTestExperimentId());
     assertNotNull(experiment.getResult());
+  }
+
+  /**
+   * - 必填参数 + customProperties
+   * <p>
+   * -本地有缓存
+   */
+  @Test
+  public void checkAllParamsHasCache2()
+          throws NoSuchFieldException, IllegalAccessException, InvalidArgumentException, IOException {
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
+    log.info(getTimeStamp() + experiment.getResult());
+    assertNotNull(experiment);
+    assertEquals("61", experiment.getAbTestExperimentId());
+    assertEquals("black", experiment.getResult());
+
+    experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
+    log.info(getTimeStamp() + experiment.getResult());
+    assertNotNull(experiment);
+    assertEquals("61", experiment.getAbTestExperimentId());
+    assertEquals("black", experiment.getResult());
+  }
+
+  /**
+   * - 必填参数 + customProperties
+   * <p>
+   * - 超时验证
+   */
+  @Test
+  public void check_fastFetchABTestCustomProperties_timeout()
+          throws NoSuchFieldException, IllegalAccessException, InvalidArgumentException, IOException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl("http://localhost:8887/timeoutTest").build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    int timeout = 500;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+
+    Long start = System.currentTimeMillis();
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", timeout, customProperties);
+    Long end = System.currentTimeMillis();
+
+    log.info(getTimeStamp(end-start) + "实验结果" + experiment.getResult());
+    assertEquals(timeout, end-start, 100);
+    assertNotNull(experiment);
+    assertEquals("eee", experiment.getResult());
+  }
+
+  /**
+   * - 必填参数 + customProperties
+   * <p>
+   * - 超时验证
+   */
+  @Test
+  public void check_fastFetchABTestCustomProperties_timeout_invaild()
+          throws NoSuchFieldException, IllegalAccessException, InvalidArgumentException, IOException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl("http://localhost:8887/timeoutTest").build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    int timeout = 0;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+
+    Long start = System.currentTimeMillis();
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", timeout, customProperties);
+    Long end = System.currentTimeMillis();
+
+    log.info(getTimeStamp(end-start) + "实验结果" + experiment.getResult());
+    assertEquals(timeout, end-start, 100);
+    assertNotNull(experiment);
+    assertEquals("eee", experiment.getResult());
+  }
+
+
+
+  /**
+   * - 必填参数 + customProperties
+   * <p>
+   * - 超时验证 timeout 传入负值
+   */
+  @Test
+  public void check_fastFetchABTestCustomProperties_timeout_invaild01()
+          throws NoSuchFieldException, IllegalAccessException, InvalidArgumentException, IOException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl("http://localhost:8887/timeoutTest").build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    int timeout = -500;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+
+    Long start = System.currentTimeMillis();
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", timeout, customProperties);
+    Long end = System.currentTimeMillis();
+    log.info(getTimeStamp(end-start) + "实验结果" + experiment.getResult());
+    assertEquals(timeout, end-start, 100);
+    assertNotNull(experiment);
+    assertEquals("eee", experiment.getResult());
+  }
+
+  /**
+   * <p>
+   * -本地有缓存
+   */
+  @Test
+  public void check_fastFetchABTest_int()
+          throws NoSuchFieldException, IllegalAccessException, InvalidArgumentException, IOException {
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+
+    Experiment<Integer> experiment = sensorsABTest.fastFetchABTest("xc456789", true, "xc_ex_int", -1, customProperties);
+    System.out.println(experiment.getResult());
+
+    experiment = sensorsABTest.asyncFetchABTest("xc456789", true, "xc_ex_int", -1, customProperties);
+    System.out.println(experiment.getResult());
+  }
+
+  /**
+   * <p>
+   *
+   */
+  @Test
+  public void check_fastFetchABTest()
+          throws NoSuchFieldException, IllegalAccessException, InvalidArgumentException, IOException {
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "", "eee");
+    assertEquals("eee", experiment.getResult());
   }
 
   /**
@@ -2189,13 +2432,176 @@ public class SensorsTest {
     Experiment<String> experiment =
         sensorsABTest.asyncFetchABTest("123", true, "fz",
             "eee", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
     assertNotNull(experiment);
     assertNotNull(experiment.getAbTestExperimentId());
     assertNotNull(experiment.getResult());
   }
 
   /**
+   * AsyncFetchABTest 超时默认为 3000ms
+   * <p>
    * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void checkAllParamsWithAsync_timeout() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl("http://localhost:8887/timeoutTest").build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+    Long start = System.currentTimeMillis();
+    Experiment<String> experiment =
+            sensorsABTest.asyncFetchABTest("123", true, "fz",
+                    "eee", true, customProperties);
+    Long end = System.currentTimeMillis();
+    assertEquals(3000, end-start, 100);
+    log.info(getTimeStamp(end-start) + "实验结果" + experiment.getResult());
+//    assertNotNull(experiment);
+//    assertNotNull(experiment.getAbTestExperimentId());
+//    assertNotNull(experiment.getResult());
+
+    experiment =
+            sensorsABTest.asyncFetchABTest("123", true, "fz",
+                    "eee", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+
+  }
+
+
+  /**
+   * AsyncFetchABTest 超时默认为 3000ms
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void checkAllParamsWithAsync_timeout_3000() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl("http://localhost:8887/timeoutTest").build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    int timeout = 3000;
+    customProperties.put("age", 15);
+    Long start = System.currentTimeMillis();
+    Experiment<String> experiment =
+            sensorsABTest.asyncFetchABTest("123", true, "fz",
+                    "eee", true, timeout, customProperties);
+    Long end = System.currentTimeMillis();
+    assertEquals(timeout, end-start, 100);
+    log.info(getTimeStamp(end-start) + "实验结果" + experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getResult());
+  }
+
+  /**
+   * AsyncFetchABTest 超时默认为 3000ms
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void checkAllParamsWithAsync_timeout_500() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl("http://localhost:8887/timeoutTest").build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    int timeout = 500;
+    customProperties.put("age", 15);
+    Long start = System.currentTimeMillis();
+    Experiment<String> experiment =
+            sensorsABTest.asyncFetchABTest("123", true, "fz",
+                    "eee", true, timeout, customProperties);
+    Long end = System.currentTimeMillis();
+    assertEquals(timeout, end-start, 100);
+    log.info(getTimeStamp(end-start) + "实验结果" + experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getResult());
+  }
+
+  /**
+   * AsyncFetchABTest 超时默认为 3000ms
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void checkAllParamsWithAsync_timeout_10000() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl("http://localhost:8887/timeoutTest").build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    int timeout = 10*1000;
+    customProperties.put("age", 15);
+    Long start = System.currentTimeMillis();
+    Experiment<String> experiment =
+            sensorsABTest.asyncFetchABTest("123", true, "fz",
+                    "eee", true, timeout, customProperties);
+    Long end = System.currentTimeMillis();
+    assertEquals(timeout, end-start, 100);
+    log.info(getTimeStamp(end-start) + "实验结果" + experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getResult());
+  }
+
+
+  /**
+   * AsyncFetchABTest 超时默认为 3000ms
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void checkAllParamsWithAsync_timeout_Invaild() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl("http://localhost:8887/timeoutTest").build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    int timeout = 0;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+    Long start = System.currentTimeMillis();
+    Experiment<String> experiment =
+            sensorsABTest.asyncFetchABTest("123", true, "fz",
+                    "eee", 0, customProperties);
+    Long end = System.currentTimeMillis();
+    log.info(getTimeStamp(end-start) + "实验结果" + experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertEquals(3000, end-start, 100);
+    assertNotNull(experiment);
+    assertEquals("eee", experiment.getResult());
+  }
+
+  /**
+   * AsyncFetchABTest 超时默认为 3000ms
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void checkAllParamsWithAsync_timeout_Invaild01() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl("http://localhost:8887/timeoutTest").build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    int timeout = -1;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+    Long start = System.currentTimeMillis();
+    Experiment<String> experiment =
+            sensorsABTest.asyncFetchABTest("123", true, "fz",
+                    "eee", timeout, customProperties);
+    Long end = System.currentTimeMillis();
+    log.info(getTimeStamp(end-start) + "实验结果" + experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertEquals(3000, end-start, 100);
+    assertNotNull(experiment);
+    assertEquals("eee", experiment.getResult());
+  }
+
+  /**
+   * - 不携带自定义属性
    * <p>
    * -本地有缓存
    */
@@ -2212,11 +2618,37 @@ public class SensorsTest {
     //设置缓存
     experimentCacheManager.setExperimentResultCache("123", true, objectMapper.readTree(str));
     Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee");
+    log.info(getTimeStamp() + experiment.getResult());
     assertNotNull(experiment);
     assertEquals("61", experiment.getAbTestExperimentId());
     assertEquals("black", experiment.getResult());
   }
 
+
+
+
+  @Test
+  public void checkAllParamsHasCache3()
+          throws NoSuchFieldException, IllegalAccessException, InvalidArgumentException, IOException {
+    Experiment<String> experiment;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", 15);
+    experiment =
+            sensorsABTest.asyncFetchABTest("123", true, "fz",
+                    "eee", true, 3000, customProperties);
+    log.info(getTimeStamp() + experiment.getResult());
+    assertNotNull(experiment);
+    assertEquals("61", experiment.getAbTestExperimentId());
+    assertEquals("black", experiment.getResult());
+
+    experiment =
+            sensorsABTest.asyncFetchABTest("123", true, "fz",
+                    "eee", true, 3000, customProperties);
+    log.info(getTimeStamp() + experiment.getResult());
+    assertNotNull(experiment);
+    assertEquals("61", experiment.getAbTestExperimentId());
+    assertEquals("black", experiment.getResult());
+  }
   /**
    * 属性名不合法检查
    * <p>
@@ -2226,13 +2658,19 @@ public class SensorsTest {
   public void checkParamsNameWithInvalidChar() throws InvalidArgumentException {
     ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
     ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<String> experiment;
     Map<String, Object> customProperties = Maps.newHashMap();
+
+    customProperties.put("a", 15);
     customProperties.put("$age", 15);
-    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
+
+    experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
     assertNotNull(experiment);
     assertNull(experiment.getAbTestExperimentId());
     assertEquals("eee", experiment.getResult());
   }
+
+
 
   /**
    * 属性名不合法检查
@@ -2245,6 +2683,40 @@ public class SensorsTest {
     ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
     Map<String, Object> customProperties = Maps.newHashMap();
     customProperties.put("0age", 15);
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertEquals("eee", experiment.getResult());
+  }
+
+  /**
+   * 属性名不合法检查
+   * <p>
+   * - 保留字段 time
+   */
+  @Test
+  public void check_fastFetchABTest_customProperties_invalid() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("time", 123);
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertEquals("eee", experiment.getResult());
+  }
+
+  /**
+   * 属性名不合法检查
+   * <p>
+   * - 保留字段 time
+   */
+  @Test
+  public void check_fastFetchABTest_customProperties_invalid02() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("12378978978787898787878554545645454akdfadkfjkad", 123);
     Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
     assertNotNull(experiment);
     assertNull(experiment.getAbTestExperimentId());
@@ -2272,12 +2744,12 @@ public class SensorsTest {
   }
 
   /**
-   * 属性值不合法检查
+   * 属性值不合法检查,fastFetchABTest
    * <p>
    * -自定义属性传{“a”:null}
    */
   @Test
-  public void checkParamsTypeWithNull() throws InvalidArgumentException {
+  public void checkParamsTypeWithNull_fastFetchABTest() throws InvalidArgumentException {
     ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
     ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
     Map<String, Object> customProperties = Maps.newHashMap();
@@ -2288,6 +2760,623 @@ public class SensorsTest {
     assertEquals("eee", experiment.getResult());
   }
 
+  /**
+   * 属性值不合法检查,asyncFetchABTest
+   * <p>
+   * -自定义属性传{“a”:null}
+   */
+  @Test
+  public void checkParamsTypeWithNull_asyncFetchABTest() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", null);
+    Experiment<String> experiment = sensorsABTest.asyncFetchABTest("123", true, "fz", "eee", customProperties);
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertEquals("eee", experiment.getResult());
+  }
+
+
+  /**
+   * 属性值不合法检查,fastFetchABTest
+   * <p>
+   * -自定义属性传{“a”:null}
+   */
+  @Test
+  public void checkParamsValueTooLong_fastFetchABTest() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", "12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad");
+    Experiment<String> experiment = sensorsABTest.fastFetchABTest("123", true, "fz", "eee", customProperties);
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertEquals("eee", experiment.getResult());
+  }
+
+  /**
+   * 属性值不合法检查,asyncFetchABTest
+   * <p>
+   * -自定义属性传{“a”:null}
+   */
+  @Test
+  public void checkParamsValueTooLong_asyncFetchABTest() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("age", "12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad12378978978787898787878554545645454akdfadkfjkad");
+    Experiment<String> experiment = sensorsABTest.asyncFetchABTest("123", true, "fz", "eee", customProperties);
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertEquals("eee", experiment.getResult());
+  }
+
+
+  /**
+   * AsyncFetchABTest 属性值校验 Bool 型
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_asyncFetchABTest_PropBool() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("xcBool", true);
+    Experiment<Integer> experiment =
+            sensorsABTest.asyncFetchABTest("xc123", true, "TestInt",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 123, experiment.getResult());
+  }
+
+  /**
+   * AsyncFetchABTest 属性值校验 Bool 型
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_asyncFetchABTest_PropBool_false() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<Integer> experiment;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("xcBool", 123);
+
+    experiment =
+            sensorsABTest.fastFetchABTest("xc123", true, "TestInt1",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 123, experiment.getResult());
+
+
+    experiment =
+            sensorsABTest.asyncFetchABTest("xc123", true, "TestInt1",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 123, experiment.getResult());
+  }
+
+
+  /**
+   * fastFetchABTest/AsyncFetchABTest 属性值校验 int 型
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_PropInt() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<Integer> experiment;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("xcInt", 111);
+
+    experiment =
+            sensorsABTest.fastFetchABTest("xc222", true, "TestInt",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 123, experiment.getResult());
+
+
+    experiment =
+            sensorsABTest.asyncFetchABTest("xc222", true, "TestInt",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 123, experiment.getResult());
+  }
+
+  /**
+   * AsyncFetchABTest 属性值校验 int 型
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_PropStr() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<Integer> experiment;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("xcStr", "abc123");
+
+    experiment =
+            sensorsABTest.fastFetchABTest("xc444", true, "TestInt",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 123, experiment.getResult());
+
+
+    experiment =
+            sensorsABTest.asyncFetchABTest("xc444", true, "TestInt",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 123, experiment.getResult());
+  }
+
+  /**
+   * AsyncFetchABTest 属性值校验 Date 型
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_PropDate() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<Integer> experiment;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    Date date = new Date();
+    customProperties.put("xcDate", date);
+
+    experiment =
+            sensorsABTest.fastFetchABTest("xc555", true, "TestInt",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 456, experiment.getResult());
+
+
+    experiment =
+            sensorsABTest.asyncFetchABTest("xc555", true, "TestInt",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 456, experiment.getResult());
+  }
+
+  /**
+   * AsyncFetchABTest 属性值校验 Date 型
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_PropList() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<Integer> experiment;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    List<String> list = new ArrayList<>();
+    list.add("alist");
+    list.add("bbb");
+    customProperties.put("xcList", list);
+
+    experiment =
+            sensorsABTest.fastFetchABTest("xc666", true, "TestInt",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 123, experiment.getResult());
+
+
+    experiment =
+            sensorsABTest.asyncFetchABTest("xc777", true, "TestInt",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 123, experiment.getResult());
+  }
+
+  /**
+   * AsyncFetchABTest 属性值校验 Date 型
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_PropAll() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<Integer> experiment;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    List<String> list = new ArrayList<>();
+    list.add("aaa");
+    list.add("bbb");
+    customProperties.put("xcList", list);
+    customProperties.put("xcBool", true);
+    customProperties.put("xcInt", 111);
+    customProperties.put("xcDate", new Date());
+    customProperties.put("xcStr", "aaa");
+
+    experiment =
+            sensorsABTest.fastFetchABTest(distinctIDVar + System.currentTimeMillis(), true, "TestInt1",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 456, experiment.getResult());
+
+
+    experiment =
+            sensorsABTest.asyncFetchABTest(distinctIDVar+111, true, "TestInt",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals((Integer) 456, experiment.getResult());
+  }
+
+  /**
+   * 场景测试
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_TestCase() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<String> experiment;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("pyy_age", 13);
+    customProperties.put("pyy_city", "北京");
+
+    distinctIDVar = "xc" + System.currentTimeMillis();
+
+    experiment =
+            sensorsABTest.fastFetchABTest(distinctIDVar , true, "pyy_ex_a",
+                    "DEFALUT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+//    assertEquals((Integer) 456, experiment.getResult());
+
+    customProperties.clear();
+
+    experiment =
+            sensorsABTest.asyncFetchABTest(distinctIDVar, true, "pyy_ex_a",
+                    "DEFALUT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+//    assertEquals((Integer) 456, experiment.getResult());
+  }
+
+  /**
+   * 场景测试
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_TestCase01() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<String> experiment;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("pyy_age", 13);
+    customProperties.put("pyy_city", "北京");
+
+    distinctIDVar = "xc" + System.currentTimeMillis();
+
+    experiment =
+            sensorsABTest.fastFetchABTest(distinctIDVar, true, "pyy_ex_a",
+                    "DEFALUT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+//    assertEquals((Integer) 456, experiment.getResult());
+
+    customProperties.clear();
+    customProperties.put("pyy_age", 13);
+
+    experiment =
+            sensorsABTest.asyncFetchABTest(distinctIDVar, true, "pyy_ex_a",
+                    "DEFALUT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+//    assertEquals((Integer) 456, experiment.getResult());
+  }
+
+  /**
+   * 场景测试
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_TestCase02() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<String> experiment;
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.put("pyy_city", "北京");
+
+    distinctIDVar = "xc" + System.currentTimeMillis();
+
+    experiment =
+            sensorsABTest.fastFetchABTest(distinctIDVar, true, "pyy_ex_city",
+                    "DEFALUT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+//    assertEquals((Integer) 456, experiment.getResult());
+
+    customProperties.clear();
+    customProperties.put("pyy_age", 13);
+    customProperties.put("pyy_city", "北京");
+
+    experiment =
+            sensorsABTest.asyncFetchABTest(distinctIDVar, true, "pyy_ex_a",
+                    "DEFALUT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNotNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+//    assertEquals((Integer) 456, experiment.getResult());
+  }
+
+  /**
+   * 场景测试
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_TestCase03() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<String> experiment;
+    distinctIDVar = "xc" + System.currentTimeMillis();
+    Map<String, Object> customProperties = Maps.newHashMap();
+    customProperties.clear();
+    customProperties.put("pyy_age", 14);
+
+    experiment =
+            sensorsABTest.asyncFetchABTest(distinctIDVar, true, "pyy_ex_b",
+                    "DEFALUT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals("DEFALUT", experiment.getResult());
+  }
+
+  /**
+   * 场景测试
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_TestCase04() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<Integer> experiment;
+    distinctIDVar = "xc" + System.currentTimeMillis();
+    Map<String, Object> customProperties = Maps.newHashMap();
+
+    experiment =
+            sensorsABTest.asyncFetchABTest(distinctIDVar, true, "pyy_int",
+                    -1, true, 3000);
+
+    System.out.println(experiment.getResult());
+
+
+    customProperties.clear();
+    customProperties.put("pyy_age", 13);
+
+    Experiment<String> experiment1 =
+            sensorsABTest.asyncFetchABTest(distinctIDVar, true, "pyy_ex_b",
+                    "DEFAULT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals("DEFAULT", experiment.getResult());
+  }
+
+  /**
+   * 场景测试
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_TestCase05() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<String> experiment;
+    distinctIDVar = "xc" + System.currentTimeMillis();
+    Map<String, Object> customProperties = Maps.newHashMap();
+
+    customProperties.clear();
+    customProperties.put("pyy_age", 13);
+    customProperties.put("pyy_city", "北京");
+
+    experiment =
+            sensorsABTest.asyncFetchABTest(distinctIDVar, true, "pyy_ex_a",
+                    "DEFALUT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+
+
+    customProperties.clear();
+    customProperties.put("pyy_age", 13);
+
+    experiment =
+            sensorsABTest.asyncFetchABTest(distinctIDVar, true, "pyy_ex_b",
+                    "DEFAULT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals("DEFAULT", experiment.getResult());
+  }
+
+
+  /**
+   * 场景测试
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_TestCase06() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<String> experiment;
+    distinctIDVar = "xc" + System.currentTimeMillis();
+    Map<String, Object> customProperties = Maps.newHashMap();
+
+    customProperties.clear();
+    customProperties.put("pyy_age", 13);
+    customProperties.put("pyy_city", "北京");
+
+    experiment =
+            sensorsABTest.asyncFetchABTest(distinctIDVar, true, "pyy_ex_city",
+                    "DEFALUT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+
+
+
+    experiment =
+            sensorsABTest.fastFetchABTest(distinctIDVar, true, "pyy_ex_b",
+                    "DEFAULT", true, 3000);
+    System.out.println(experiment.getResult());
+    assertNotNull(experiment);
+    assertNull(experiment.getAbTestExperimentId());
+    assertNotNull(experiment.getResult());
+    assertEquals("DEFAULT", experiment.getResult());
+  }
+
+  /**
+   * 场景测试
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_TestCase07() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<String> experiment;
+    distinctIDVar = "xc" + System.currentTimeMillis();
+    Map<String, Object> customProperties = Maps.newHashMap();
+
+    customProperties.clear();
+    customProperties.put("pyy_age", 13);
+    customProperties.put("pyy_city", "北京");
+
+    experiment =
+            sensorsABTest.asyncFetchABTest(distinctIDVar, true, "pyy_ex_city",
+                    "DEFALUT", true, 3000, customProperties);
+    System.out.println(experiment.getResult());
+
+
+    customProperties.clear();
+    customProperties.put("pyy_age", 14);
+    Experiment<Integer> experiment1 =
+            sensorsABTest.fastFetchABTest(distinctIDVar, true, "pyy_ex_age",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment1.getResult());
+    assertNotNull(experiment1);
+    assertNull(experiment1.getAbTestExperimentId());
+    assertNotNull(experiment1.getResult());
+    assertEquals((Integer) 20, experiment1.getResult());
+  }
+
+  /**
+   * 场景测试
+   * <p>
+   * -所有参数都传（自定义属性合法）
+   * <p>
+   * -本地无缓存
+   */
+  @Test
+  public void check_TestCase08() throws InvalidArgumentException {
+    ABGlobalConfig abGlobalConfig = ABGlobalConfig.builder().setSensorsAnalytics(sa).setApiUrl(ABUrl).build();
+    ISensorsABTest sensorsABTest = new SensorsABTest(abGlobalConfig);
+    Experiment<String> experiment;
+    distinctIDVar = "xc" + System.currentTimeMillis();
+    Map<String, Object> customProperties = Maps.newHashMap();
+
+    customProperties.clear();
+    customProperties.put("pyy_age", "aaa");
+    Experiment<Integer> experiment1 =
+            sensorsABTest.fastFetchABTest(distinctIDVar, true, "pyy_ex_age",
+                    -1, true, 3000, customProperties);
+    System.out.println(experiment1.getResult());
+    assertNotNull(experiment1);
+    assertNull(experiment1.getAbTestExperimentId());
+    assertNotNull(experiment1.getResult());
+    assertEquals((Integer) 20, experiment1.getResult());
+  }
 
   private SensorsABTestWorker getSensorsABTestWorkerByReflect(ISensorsABTest abTest)
       throws NoSuchFieldException, IllegalAccessException {
