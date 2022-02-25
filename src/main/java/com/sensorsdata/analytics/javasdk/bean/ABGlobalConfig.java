@@ -70,6 +70,21 @@ public class ABGlobalConfig implements Serializable {
     return new Builder();
   }
 
+  @Override
+  public String toString() {
+    return "ABGlobalConfig{" +
+        "eventCacheTime=" + eventCacheTime +
+        ", eventCacheSize=" + eventCacheSize +
+        ", experimentCacheSize=" + experimentCacheSize +
+        ", experimentCacheTime=" + experimentCacheTime +
+        ", enableEventCache=" + enableEventCache +
+        ", apiUrl='" + apiUrl +
+        ", sensorsAnalytics=" + sensorsAnalytics +
+        ", maxTotal=" + maxTotal +
+        ", maxPerRoute=" + maxPerRoute +
+        '}';
+  }
+
   @NoArgsConstructor(access = AccessLevel.PRIVATE)
   public static class Builder {
     private Integer eventCacheTime;

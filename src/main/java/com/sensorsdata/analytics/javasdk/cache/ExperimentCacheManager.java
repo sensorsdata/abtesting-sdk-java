@@ -1,5 +1,7 @@
 package com.sensorsdata.analytics.javasdk.cache;
 
+import static com.sensorsdata.analytics.javasdk.util.ABTestUtil.map2Str;
+
 import com.sensorsdata.analytics.javasdk.SensorsABTestConst;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -8,7 +10,11 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import lombok.extern.slf4j.Slf4j;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -22,44 +28,26 @@ import java.util.concurrent.TimeUnit;
 public class ExperimentCacheManager {
 
   private final LoadingCache<String, JsonNode> experimentResultCache;
-  /**
-   * 缓存过期时间
-   */
-  private static long duration;
-  /**
-   * 缓存最大容量
-   */
-  private static int size;
 
-  private ExperimentCacheManager() {
+  public ExperimentCacheManager(int cacheTime, int cacheSize) {
     this.experimentResultCache = CacheBuilder.newBuilder()
-        .expireAfterWrite(duration, TimeUnit.MINUTES)
-        .maximumSize(size)
+        .expireAfterWrite(cacheTime, TimeUnit.MINUTES)
+        .maximumSize(cacheSize)
         .build(new CacheLoader<String, JsonNode>() {
           @Override
           public JsonNode load(String s) {
             return null;
           }
         });
-    log.info("Initializing experiment cache:size:{};duration:{}.", size, duration);
+    log.info("Initializing experiment cache:size:{};duration:{}.", cacheSize, cacheTime);
   }
 
-  private static class SensorsABTestCacheManagerStaticNestedClass {
-    private static final ExperimentCacheManager INSTANCE = new ExperimentCacheManager();
-  }
-
-  public static ExperimentCacheManager getInstance(int cacheTime, int cacheSize) {
-    duration = cacheTime;
-    size = cacheSize;
-    return SensorsABTestCacheManagerStaticNestedClass.INSTANCE;
-  }
-
-
-  public JsonNode getExperimentResultByCache(String distinctId, boolean isLoginId, String experimentName) {
-    JsonNode experimentResult = this.experimentResultCache.getIfPresent(generateKey(distinctId, isLoginId));
+  public JsonNode getExperimentResultByCache(String distinctId, boolean isLoginId, Map<String, String> customIds,
+      String experimentName) {
+    String key = generateCacheKey(distinctId, isLoginId, customIds);
+    JsonNode experimentResult = this.experimentResultCache.getIfPresent(key);
     if (experimentResult == null) {
-      log.debug("distinctId:{} isLoginId:{} experimentName:{} not found in cache.",
-          distinctId, isLoginId, experimentName);
+      log.debug("current key not found in cache.[key:{},experiment:{}]", key, experimentName);
       return null;
     }
     JsonNode results = experimentResult.findValue(SensorsABTestConst.RESULTS_KEY);
@@ -74,14 +62,16 @@ public class ExperimentCacheManager {
         }
       }
     }
-    log.debug("distinctId:{} isLoginId:{} experimentName:{} not hit cache result.",
-        distinctId, isLoginId, experimentName);
+    log.debug("current experimentName not hit cache result.[key:{},experiment:{}]", key, experimentName);
     return null;
   }
 
-  public void setExperimentResultCache(String distinctId, boolean isLoginId, JsonNode experiment) {
+  public void setExperimentResultCache(String distinctId, boolean isLoginId, Map<String, String> customIds,
+      JsonNode experiment) {
     if (experiment != null) {
-      this.experimentResultCache.put(generateKey(distinctId, isLoginId), experiment);
+      String key = generateCacheKey(distinctId, isLoginId, customIds);
+      log.debug("Caches the current experiment to the manager.[key:{},experiment:{}]", key, experiment);
+      this.experimentResultCache.put(key, experiment);
     }
   }
 
@@ -89,7 +79,17 @@ public class ExperimentCacheManager {
     return this.experimentResultCache.size();
   }
 
-  private String generateKey(String distinctId, boolean isLoginId) {
-    return String.format("%s_%b", distinctId, isLoginId);
+  private String generateCacheKey(String distinctId, boolean isLoginId, Map<String, String> customIds) {
+    String key = String.format("%s_%b_%s", distinctId, isLoginId, map2Str(customIds));
+    try {
+      MessageDigest instance = MessageDigest.getInstance("MD5");
+      instance.update(key.getBytes(StandardCharsets.UTF_8));
+      return new String(instance.digest(), StandardCharsets.UTF_8);
+    } catch (NoSuchAlgorithmException e) {
+      log.error("failed generate cache md5 key,so use original key.[distinctId:{},isLoginId:{},customIds:{}].",
+          distinctId, isLoginId, map2Str(customIds));
+    }
+    return key;
   }
+
 }

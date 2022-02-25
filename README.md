@@ -14,7 +14,7 @@ A/B Testing SDK 是一款用于 A/B 测试的 SDK。
 
 ## 集成文档
 
-请参考神策官网 [Java SDK 集成（A/B Testing）](https://manual.sensorsdata.cn/sa/latest/tech_ab_testing_go-27726801.html)。
+请参考神策官网 [Java SDK 集成（A/B Testing）](https://manual.sensorsdata.cn/sa/latest/tech_ab_testing_java-30933685.html)。
 
 ## 贡献
 

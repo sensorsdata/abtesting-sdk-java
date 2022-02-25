@@ -1,7 +1,9 @@
 package com.sensorsdata.analytics.javasdk;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import com.sensorsdata.analytics.javasdk.util.ABTestUtil;
@@ -12,6 +14,7 @@ import org.junit.Test;
 import java.util.Map;
 
 /**
+ * 工具类方法单元测试
  *
  * @author fangzhuo
  * @version 1.0.0
@@ -19,14 +22,14 @@ import java.util.Map;
  */
 public class ABTestUtilTest {
 
-  private Map<String, Object> customProperties = Maps.newHashMap();
+  private final Map<String, Object> customProperties = Maps.newHashMap();
 
   @Test
   public void testKey() {
     customProperties.put("distinct_id", "eeee");
     try {
       ABTestUtil.customPropertiesHandler(customProperties);
-      assertTrue(false);
+      fail();
     } catch (InvalidArgumentException e) {
       assertTrue(true);
     }
@@ -37,7 +40,7 @@ public class ABTestUtilTest {
     customProperties.put("device_id", "eeee");
     try {
       ABTestUtil.customPropertiesHandler(customProperties);
-      assertTrue(false);
+      fail();
     } catch (InvalidArgumentException e) {
       assertTrue(true);
     }
@@ -48,7 +51,7 @@ public class ABTestUtilTest {
     customProperties.put(null, "111");
     try {
       ABTestUtil.customPropertiesHandler(customProperties);
-      assertTrue(false);
+      fail();
     } catch (InvalidArgumentException e) {
       assertTrue(true);
     }
@@ -61,7 +64,7 @@ public class ABTestUtilTest {
     customProperties.put(key, "eeee");
     try {
       ABTestUtil.customPropertiesHandler(customProperties);
-      assertTrue(false);
+      fail();
     } catch (InvalidArgumentException e) {
       assertTrue(true);
     }
@@ -73,9 +76,9 @@ public class ABTestUtilTest {
     try {
       final Map<String, Object> stringObjectMap = ABTestUtil.customPropertiesHandler(customProperties);
       assertNotNull(stringObjectMap);
-      assertTrue(stringObjectMap.size() == 1);
+      assertEquals(1, stringObjectMap.size());
     } catch (InvalidArgumentException e) {
-      assertTrue(false);
+      fail();
     }
   }
 }

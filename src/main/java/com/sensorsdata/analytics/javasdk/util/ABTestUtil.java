@@ -1,8 +1,11 @@
 package com.sensorsdata.analytics.javasdk.util;
 
+import com.sensorsdata.analytics.javasdk.SensorsABParams;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.Date;
@@ -18,6 +21,7 @@ import java.util.regex.Pattern;
  * @version 1.0.0
  * @since 2021/06/15 10:28
  */
+@Slf4j
 public class ABTestUtil {
 
   /**
@@ -26,6 +30,11 @@ public class ABTestUtil {
   private static final Pattern pattern = Pattern.compile(
       "^((?!^distinct_id$|^original_id$|^time$|^properties$|^id$|^first_id$|^second_id$|^users$|^events$|^event$|^user_id$|^date$|^datetime$|^device_id$|^user_group|^user_tag|^[0-9])[a-zA-Z0-9_]{0,99})$",
       Pattern.CASE_INSENSITIVE);
+
+  /**
+   * 要求 property 里面的 value 长度不得超过 1024
+   */
+  private static final int MAX_PROPERTY_LENGTH = 1024;
 
   private ABTestUtil() {
   }
@@ -79,4 +88,61 @@ public class ABTestUtil {
     return newProperties;
   }
 
+  public static <T> boolean assertCustomIds(SensorsABParams<T> sensorsParams) {
+    Map<String, String> customIds = sensorsParams.getCustomIds();
+    if (customIds == null || customIds.isEmpty()) {
+      log.debug("fetchABTest request without customIds.[distinctId:{},isLoginId:{},experiment:{}]",
+          sensorsParams.getDistinctId(), sensorsParams.getIsLoginId(), sensorsParams.getExperimentVariableName());
+      return false;
+    }
+    for (Map.Entry<String, String> entry : customIds.entrySet()) {
+      if (StringUtils.isBlank(entry.getKey())) {
+        log.warn(
+            "fetchABTest request with invalid customIds,the keys of customIds has null or empty.[distinctId:{},isLoginId:{},experiment:{},customIds:{}]",
+            sensorsParams.getDistinctId(),
+            sensorsParams.getIsLoginId(),
+            sensorsParams.getExperimentVariableName(),
+            map2Str(customIds));
+        return true;
+      }
+      if (!pattern.matcher(entry.getKey()).matches()) {
+        log.warn("fetchABTest request with invalid customIds,the key mismatch.[distinctId:{},isLoginId:{},experiment:{},customIds:{}]",
+            sensorsParams.getDistinctId(),
+            sensorsParams.getIsLoginId(),
+            sensorsParams.getExperimentVariableName(),
+            map2Str(customIds));
+        return true;
+      }
+      if (StringUtils.isBlank(entry.getValue())) {
+        log.warn(
+            "fetchABTest request with invalid customIds,the value of customIds has null or empty.[distinctId:{},isLoginId:{},experiment:{},customIds:{}]",
+            sensorsParams.getDistinctId(),
+            sensorsParams.getIsLoginId(),
+            sensorsParams.getExperimentVariableName(),
+            map2Str(customIds));
+        return true;
+      }
+      if (entry.getValue().length() > MAX_PROPERTY_LENGTH) {
+        log.warn(
+            "fetchABTest request with invalid customIds,the value length is too long.[distinctId:{},isLoginId:{},experiment:{},customIds:{}]",
+            sensorsParams.getDistinctId(),
+            sensorsParams.getIsLoginId(),
+            sensorsParams.getExperimentVariableName(),
+            map2Str(customIds));
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static String map2Str(Map<String, String> customIds) {
+    StringBuilder res = new StringBuilder();
+    if (customIds == null || customIds.isEmpty()) {
+      return res.toString();
+    }
+    for (Map.Entry<String, String> entry : customIds.entrySet()) {
+      res.append(String.format("{%s_%s}", entry.getKey(), entry.getValue()));
+    }
+    return res.toString();
+  }
 }
