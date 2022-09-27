@@ -16,7 +16,7 @@ public class SensorsABTestConst {
 
   static final String JAVA = "Java";
 
-  static final String VERSION = "0.0.4";
+  static final String VERSION = "0.0.5";
 
   static final String VERSION_KEY = "abtest_lib_version";
 
@@ -39,6 +39,9 @@ public class SensorsABTestConst {
   public static final String RESULTS_KEY = "results";
   public static final String STATUS_KEY = "status";
   public static final String SUCCESS = "SUCCESS";
+  
+  // 自定义主体 id
+  public static final String CUSTOM_ID = "custom_id";
 
 
 }

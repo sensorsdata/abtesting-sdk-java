@@ -16,6 +16,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 import java.io.IOException;
@@ -195,9 +196,9 @@ class SensorsABTestWorker {
     }
     //缓存中存在 A/B 事件
     if (eventCacheManager.judgeEventCacheExist(result.getDistinctId(), result.getIsLoginId(),
-        result.getAbTestExperimentId(), customIds)) {
-      log.info("The event has been triggered.[distinctId:{},experimentId:{}]",
-          result.getDistinctId(), result.getAbTestExperimentId());
+        result.getAbTestExperimentId(), customIds, result.getAbTestExperimentGroupId())) {
+      log.info("The event has been triggered.[distinctId:{},experimentId:{},abTestExperimentGroupId:{}]",
+          result.getDistinctId(), result.getAbTestExperimentId(), result.getAbTestExperimentGroupId());
       return;
     }
     if (properties == null) {
@@ -205,6 +206,8 @@ class SensorsABTestWorker {
     }
     properties.put(SensorsABTestConst.EXPERIMENT_ID, result.getAbTestExperimentId());
     properties.put(SensorsABTestConst.EXPERIMENT_GROUP_ID, result.getAbTestExperimentGroupId());
+    if (null != customIds)
+      properties.putAll(customIds);
     //判断是否为当天首次上传，重启服务，升级 SDK 版本都会触发
     String day = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.format(Calendar.getInstance());
     if (trigger == null || trigger.isEmpty() || !day.equals(trigger)) {
@@ -213,22 +216,22 @@ class SensorsABTestWorker {
       versions.add(String.format("%s:%s", SensorsABTestConst.AB_TEST_EVENT_LIB_VERSION, SensorsABTestConst.VERSION));
       properties.put(SensorsABTestConst.LIB_PLUGIN_VERSION, versions);
       log.debug(
-          "Meet the conditions:the first event of current day,the first events of server.[distinctId:{},isLoginId:{},experimentId:{}]",
-          result.getDistinctId(), result.getIsLoginId(), result.getAbTestExperimentId());
+          "Meet the conditions:the first event of current day,the first events of server.[distinctId:{},isLoginId:{},experimentId:{},abTestExperimentGroupId:{}]",
+          result.getDistinctId(), result.getIsLoginId(), result.getAbTestExperimentId(), result.getAbTestExperimentGroupId());
     }
     this.config.getSensorsAnalytics().track(result.getDistinctId(), result.getIsLoginId(),
         SensorsABTestConst.EVENT_TYPE, properties);
-    log.debug("Successfully trigger AB event.[distinctId:{},isLoginId:{},experimentId:{}]",
-        result.getDistinctId(), result.getIsLoginId(), result.getAbTestExperimentId());
+    log.debug("Successfully trigger AB event.[distinctId:{},isLoginId:{},experimentId:{},abTestExperimentGroupId:{}]",
+        result.getDistinctId(), result.getIsLoginId(), result.getAbTestExperimentId(), result.getAbTestExperimentGroupId());
     //判断是否需要缓存上报事件
     if (config.getEnableEventCache() == null || config.getEnableEventCache()) {
-      log.debug("Enable event cache,will cache event.[distinctId:{},isLoginId:{},experimentId:{}]",
-          result.getDistinctId(), result.getIsLoginId(), result.getAbTestExperimentId());
+      log.debug("Enable event cache,will cache event.[distinctId:{},isLoginId:{},experimentId:{},abTestExperimentGroupId:{}]",
+          result.getDistinctId(), result.getIsLoginId(), result.getAbTestExperimentId(), result.getAbTestExperimentGroupId());
       eventCacheManager.setEventCache(
           result.getDistinctId(),
           result.getIsLoginId(),
           result.getAbTestExperimentId(),
-          customIds);
+          customIds, result.getAbTestExperimentGroupId());
     }
   }
 
@@ -258,8 +261,8 @@ class SensorsABTestWorker {
         params.put("param_name", experimentName);
       }
       String strJson = objectMapper.writeValueAsString(params);
-      log.debug("The parameter for making a network request is {}.", strJson);
       String result = httpConsumer.consume(strJson, timeoutMilliseconds);
+      log.debug("Successfully get the httpConsumer result.[strJson:{},result:{}]", strJson, result);
       JsonNode res = objectMapper.readTree(result);
       if (res != null && SensorsABTestConst.SUCCESS.equals(res.findValue(SensorsABTestConst.STATUS_KEY).asText())
           && res.findValue(SensorsABTestConst.RESULTS_KEY).size() > 0) {

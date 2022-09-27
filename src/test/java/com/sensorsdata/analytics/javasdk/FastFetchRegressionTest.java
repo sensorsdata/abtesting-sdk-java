@@ -301,4 +301,5 @@ public class FastFetchRegressionTest extends SensorsBaseTest {
         assertEquals("2", experiment.getAbTestExperimentId());
         assertEquals("1", experiment.getAbTestExperimentGroupId());
     }
+
 }

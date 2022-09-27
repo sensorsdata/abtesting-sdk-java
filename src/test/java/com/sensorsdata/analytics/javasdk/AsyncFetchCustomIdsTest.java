@@ -11,6 +11,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -339,4 +340,39 @@ public class AsyncFetchCustomIdsTest extends SensorsBaseTest {
         assertEquals(1, (int) experiment.getResult());
     }
 
+    /**
+     * asyncFetchTest 请求，携带一个正确的 customIds
+     * 期望：properties 字段中存在 custom_id
+     */
+    @Test
+    @Ignore
+    public void checkAsyncFetchWithCustomIds()
+        throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException, IOException {
+        //初始化 AB Testing SDK
+        initSASDK();
+        initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
+        initInnerClassInfo(sensorsABTest);
+        HashMap<String, String> customIdMap = new HashMap<>();
+        customIdMap.put("custom_id", "test11");
+        Experiment<String> result =
+            sensorsABTest.asyncFetchABTest(SensorsABParams.starter("a123", false, "test_group_id2", "{\"color\":\"grey\"}").customIds(customIdMap).build());
+        initInnerClassInfo(sensorsABTest);
+
+        // 检查试验结果
+        assertEquals("a123", result.getDistinctId());
+        assertEquals(false, result.getIsLoginId());
+        assertEquals("2", result.getAbTestExperimentGroupId());
+        
+        // 检查事件缓存
+        assertEquals(1, eventCacheByReflect.size());
+
+        if(messageBuffer != null) {
+            assertNotEquals(0, messageBuffer.length());
+            JsonNode jsonNode = SensorsAnalyticsUtil.getJsonObjectMapper().readValue(messageBuffer.toString(), JsonNode.class);
+            assertEquals("\"$ABTestTrigger\"", jsonNode.get("event").toString());
+            // 验证属性中是否包含 custom_id
+            assertEquals("\"test11\"", jsonNode.get("properties").get("custom_id").toString());
+        }
+        assertNotNull(result.getResult());
+    }
 }

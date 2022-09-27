@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import static org.junit.Assert.*;
 
@@ -306,4 +307,226 @@ public class AsyncFetchRegressionTest extends SensorsBaseTest {
     assertEquals("2", experiment.getAbTestExperimentId());
     assertEquals("1", experiment.getAbTestExperimentGroupId());
   }
+
+  /**
+   * 调用 asyncFetchABTest 接口触发 $ABTestTrigger 事件，再次调用 asyncFetchABTest 接口，传入相同的试验参数
+   * 期望：再次调用后 $ABTestTrigger 事件正常触发
+   *      $ABTestTrigger 事件中 $abtest_experiment_group_id 为新的试验组 ID
+   */ 
+  @Test
+  public void checkAsyncFetchTestExperimentGroupIdChange ()
+      throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+    //初始化 AB Testing SDK
+    initSASDK();
+    initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
+    initInnerClassInfo(sensorsABTest);
+    HashMap<String, String> customIdMap = new HashMap<>();
+    customIdMap.put("custom_id", "test11");
+    // 第一次请求
+    Experiment<String> result =
+        sensorsABTest.asyncFetchABTest(SensorsABParams.starter(distinctId, false, "test_group_id2", "{\"color\":\"grey\"}").customIds(customIdMap).build());
+    initInnerClassInfo(sensorsABTest);
+    
+    // 检查试验结果
+    assertEquals(distinctId, result.getDistinctId());
+    assertEquals(false, result.getIsLoginId());
+    assertEquals("2", result.getAbTestExperimentGroupId());
+    assertEquals("{\"name\":\"helloWord2\"}", result.getResult());
+    
+    
+    // asyncFetchABTest 接口固定不存储实验缓存, fastFetchABTest 接口才存储实验缓存
+    assertEquals(0, experimentCacheManagerByReflect.getCacheSize());
+
+    // 检查事件缓存
+    assertEquals(1, eventCacheByReflect.size());
+    assertEquals("2", eventCacheByReflect.getIfPresent(generateKey(result.getDistinctId(), result.getIsLoginId(), result.getAbTestExperimentId(), customIdMap)));
+
+
+    // 第二次请求
+    Experiment<String> result2 =
+        sensorsABTest.asyncFetchABTest(SensorsABParams.starter(distinctId, false, "test_group_id3", "{\"color\":\"grey\"}").customIds(customIdMap).build());
+    initInnerClassInfo(sensorsABTest);
+
+    assertEquals("a123", result2.getDistinctId());
+    assertEquals(false, result2.getIsLoginId());
+    assertEquals("3", result2.getAbTestExperimentGroupId());
+    assertEquals("{\"name\":\"helloWord3\"}", result2.getResult());
+
+
+    assertEquals(0, experimentCacheManagerByReflect.getCacheSize());
+
+    // 检查事件缓存
+    assertEquals(1, eventCacheByReflect.size());
+    assertEquals("3", eventCacheByReflect.getIfPresent(generateKey(result2.getDistinctId(), result2.getIsLoginId(), result2.getAbTestExperimentId(), customIdMap)));
+  }
+
+  /**
+   * 步骤：调用 asyncFetchABTest 接口，传入正确的试验参数
+   *      触发 $ABTestTrigger 事件，再次调用 asyncFetchABTest 接口，传入相同的试验参数
+   * 期望：再次调用后 $ABTestTrigger 事件不再触发     
+   */
+  @Test
+  public void checkAsyncFetchTestExperimentGroupIdNotChange ()
+      throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+    //初始化 AB Testing SDK
+    initSASDK();
+    initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
+    initInnerClassInfo(sensorsABTest);
+    HashMap<String, String> customIdMap = new HashMap<>();
+    customIdMap.put("custom_id", "test11");
+    // 第一次请求
+    Experiment<String> result =
+        sensorsABTest.asyncFetchABTest(SensorsABParams.starter(distinctId, false, "test_group_id2", "{\"color\":\"grey\"}").customIds(customIdMap).build());
+    initInnerClassInfo(sensorsABTest);
+
+    // 检查试验结果
+    assertEquals(distinctId, result.getDistinctId());
+    assertEquals(false, result.getIsLoginId());
+    assertEquals("2", result.getAbTestExperimentGroupId());
+    assertEquals("{\"name\":\"helloWord2\"}", result.getResult());
+
+
+    // asyncFetchABTest 接口固定不存储实验缓存, fastFetchABTest 接口才存储实验缓存
+    assertEquals(0, experimentCacheManagerByReflect.getCacheSize());
+
+    // 检查事件缓存
+    assertEquals(1, eventCacheByReflect.size());
+    assertEquals("2", eventCacheByReflect.getIfPresent(generateKey(result.getDistinctId(), result.getIsLoginId(), result.getAbTestExperimentId(), customIdMap)));
+
+
+    // 第二次请求
+    Experiment<String> result2 =
+        sensorsABTest.asyncFetchABTest(SensorsABParams.starter(distinctId, false, "test_group_id2", "{\"color\":\"grey\"}").customIds(customIdMap).build());
+    initInnerClassInfo(sensorsABTest);
+
+    assertEquals("a123", result2.getDistinctId());
+    assertEquals(false, result2.getIsLoginId());
+    assertEquals("2", result2.getAbTestExperimentGroupId());
+    assertEquals("{\"name\":\"helloWord2\"}", result2.getResult());
+
+
+    assertEquals(0, experimentCacheManagerByReflect.getCacheSize());
+
+    // 检查事件缓存
+    assertEquals(1, eventCacheByReflect.size());
+    assertEquals("2", eventCacheByReflect.getIfPresent(generateKey(result2.getDistinctId(), result2.getIsLoginId(), result2.getAbTestExperimentId(), customIdMap)));
+  }
+
+  /**
+   * 步骤：启动 App，调用 asyncFetchABTest 接口，传入正确的试验参数
+   *      触发 $ABTestTrigger 事件，再次冷启动，调用 asyncFetchABTest 接口，传入相同的试验参数
+   *      检查 $ABTestTrigger 事件触发情况
+   * 期望：再次冷启动调用后 $ABTestTrigger 事件不再触发
+   */
+  @Test
+  public void checkAsyncFetchTestExperimentGroupIdNotChangeRestart ()
+      throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+    //初始化 AB Testing SDK
+    initSASDK();
+    initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
+    initInnerClassInfo(sensorsABTest);
+    HashMap<String, String> customIdMap = new HashMap<>();
+    customIdMap.put("custom_id", "test11");
+    // 第一次请求
+    Experiment<String> result =
+        sensorsABTest.asyncFetchABTest(SensorsABParams.starter(distinctId, false, "test_group_id2", "{\"color\":\"grey\"}").customIds(customIdMap).build());
+    initInnerClassInfo(sensorsABTest);
+
+    // 检查试验结果
+    assertEquals(distinctId, result.getDistinctId());
+    assertEquals(false, result.getIsLoginId());
+    assertEquals("2", result.getAbTestExperimentGroupId());
+    assertEquals("{\"name\":\"helloWord2\"}", result.getResult());
+
+
+    // asyncFetchABTest 接口固定不存储实验缓存, fastFetchABTest 接口才存储实验缓存
+    assertEquals(0, experimentCacheManagerByReflect.getCacheSize());
+
+    // 检查事件缓存
+    assertEquals(1, eventCacheByReflect.size());
+    assertEquals("2", eventCacheByReflect.getIfPresent(generateKey(result.getDistinctId(), result.getIsLoginId(), result.getAbTestExperimentId(), customIdMap)));
+
+
+    // 第二次请求
+    //初始化 AB Testing SDK
+    initSASDK();
+    initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
+    initInnerClassInfo(sensorsABTest);
+    
+    Experiment<String> result2 =
+        sensorsABTest.asyncFetchABTest(SensorsABParams.starter(distinctId, false, "test_group_id2", "{\"color\":\"grey\"}").customIds(customIdMap).build());
+    initInnerClassInfo(sensorsABTest);
+
+    assertEquals("a123", result2.getDistinctId());
+    assertEquals(false, result2.getIsLoginId());
+    assertEquals("2", result2.getAbTestExperimentGroupId());
+    assertEquals("{\"name\":\"helloWord2\"}", result2.getResult());
+
+
+    assertEquals(0, experimentCacheManagerByReflect.getCacheSize());
+
+    // 检查事件缓存
+    assertEquals(1, eventCacheByReflect.size());
+    assertEquals("2", eventCacheByReflect.getIfPresent(generateKey(result2.getDistinctId(), result2.getIsLoginId(), result2.getAbTestExperimentId(), customIdMap)));
+  }
+
+  /**
+   * 步骤：启动 App，调用 asyncFetchABTest 接口，传入正确的试验参数
+   *      触发 $ABTestTrigger 事件，再次调用 asyncFetchABTest 接口，传入相同的试验参数
+   *      检查 $ABTestTrigger 事件触发情况
+   * 期望：再次调用后 $ABTestTrigger 事件正常触发
+   *      $ABTestTrigger 事件中 $abtest_experiment_group_id 为新的试验组 ID
+   *      更新事件缓存信息
+   */
+  @Test
+  public void checkAsyncFetchTestExperimentGroupIdChangeRestart ()
+      throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+    //初始化 AB Testing SDK
+    initSASDK();
+    initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
+    initInnerClassInfo(sensorsABTest);
+    HashMap<String, String> customIdMap = new HashMap<>();
+    customIdMap.put("custom_id", "test11");
+    // 第一次请求
+    Experiment<String> result =
+        sensorsABTest.asyncFetchABTest(SensorsABParams.starter(distinctId, false, "test_group_id2", "{\"color\":\"grey\"}").customIds(customIdMap).build());
+    initInnerClassInfo(sensorsABTest);
+
+    // 检查试验结果
+    assertEquals(distinctId, result.getDistinctId());
+    assertEquals(false, result.getIsLoginId());
+    assertEquals("2", result.getAbTestExperimentGroupId());
+    assertEquals("{\"name\":\"helloWord2\"}", result.getResult());
+
+
+    // asyncFetchABTest 接口固定不存储实验缓存, fastFetchABTest 接口才存储实验缓存
+    assertEquals(0, experimentCacheManagerByReflect.getCacheSize());
+
+    // 检查事件缓存
+    assertEquals(1, eventCacheByReflect.size());
+    assertEquals("2", eventCacheByReflect.getIfPresent(generateKey(result.getDistinctId(), result.getIsLoginId(), result.getAbTestExperimentId(), customIdMap)));
+
+
+    // 第二次请求
+    initSASDK();
+    initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
+    initInnerClassInfo(sensorsABTest);
+    
+    Experiment<String> result2 =
+        sensorsABTest.asyncFetchABTest(SensorsABParams.starter(distinctId, false, "test_group_id3", "{\"color\":\"grey\"}").customIds(customIdMap).build());
+    initInnerClassInfo(sensorsABTest);
+
+    assertEquals("a123", result2.getDistinctId());
+    assertEquals(false, result2.getIsLoginId());
+    assertEquals("3", result2.getAbTestExperimentGroupId());
+    assertEquals("{\"name\":\"helloWord3\"}", result2.getResult());
+
+
+    assertEquals(0, experimentCacheManagerByReflect.getCacheSize());
+
+    // 检查事件缓存
+    assertEquals(1, eventCacheByReflect.size());
+    assertEquals("3", eventCacheByReflect.getIfPresent(generateKey(result2.getDistinctId(), result2.getIsLoginId(), result2.getAbTestExperimentId(), customIdMap)));
+  }
+  
 }

@@ -2,10 +2,12 @@ package com.sensorsdata.analytics.javasdk;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
+
 import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import com.sensorsdata.analytics.javasdk.util.SensorsAnalyticsUtil;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -27,7 +29,7 @@ import static org.junit.Assert.*;
 public class FastFetchCustomIdsTest extends SensorsBaseTest {
 
   @Before
-  public void init(){
+  public void init() {
     initSASDK();
   }
 
@@ -40,10 +42,10 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     //初始化 AB Testing SDK
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     Experiment<String> experiment =
-            sensorsABTest.fastFetchABTest(
-                    SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                            .addCustomId("custom_id", "test11")
-                            .build());
+        sensorsABTest.fastFetchABTest(
+            SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+                .addCustomId("custom_id", "test11")
+                .build());
     assertNotNull(experiment);
     assertEquals("a123", experiment.getDistinctId());
     assertTrue(experiment.getIsLoginId());
@@ -61,11 +63,11 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     //初始化 AB Testing SDK
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     Experiment<String> experiment =
-            sensorsABTest.fastFetchABTest(
-                    SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                            .addCustomId("custom_id1", "test11")
-                            .addCustomId("custom_id2", "test22")
-                            .build());
+        sensorsABTest.fastFetchABTest(
+            SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+                .addCustomId("custom_id1", "test11")
+                .addCustomId("custom_id2", "test22")
+                .build());
     assertNotNull(experiment);
     assertEquals("a123", experiment.getDistinctId());
     assertTrue(experiment.getIsLoginId());
@@ -80,14 +82,16 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
    */
   @Test
   public void checkFastFetchWithInvalidCustomIds01() throws InvalidArgumentException {
-    String[] customInvaild = {"date", "datetime", "distinct_id", "event", "events", "first_id", "id", "original_id", "properties", "second_id", "time", "user_id", "users"};
+    String[] customInvaild =
+        {"date", "datetime", "distinct_id", "event", "events", "first_id", "id", "original_id", "properties",
+            "second_id", "time", "user_id", "users"};
     //初始化 AB Testing SDK
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     for (String s : customInvaild) {
       Experiment<String> experiment =
-              sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                      .addCustomId(s, "eee")
-                      .build());
+          sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+              .addCustomId(s, "eee")
+              .build());
       assertNotNull(experiment);
       assertEquals("a123", experiment.getDistinctId());
       assertTrue(experiment.getIsLoginId());
@@ -104,19 +108,20 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
   @Test
   public void checkFastFetchWithInvalidCustomIds02() throws InvalidArgumentException {
     String[] customInvaild = {null, // key 为 null
-            "",                     // key 为空字符串
-            "1122aaaa",             // key 开头是数字
-            "$1122aa",              // key 包含字符 $
-            "……%%",                 // key 包含特殊字符
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // key 为100个字符
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1"}; // key 超过 100个字符
+        "",                     // key 为空字符串
+        "1122aaaa",             // key 开头是数字
+        "$1122aa",              // key 包含字符 $
+        "……%%",                 // key 包含特殊字符
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        // key 为100个字符
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1"}; // key 超过 100个字符
     //初始化 AB Testing SDK
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     for (String s : customInvaild) {
       Experiment<String> experiment =
-              sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                      .addCustomId(s, "eee")
-                      .build());
+          sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+              .addCustomId(s, "eee")
+              .build());
       assertNotNull(experiment);
       assertEquals("a123", experiment.getDistinctId());
       assertTrue(experiment.getIsLoginId());
@@ -138,27 +143,27 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
       strInvalid.append(i);
     }
     String[] valueInvalid = {null, // value 为 null
-            "",                    // value 为空字符串
-            strInvalid.toString(),            // value 长度为 1024
-                                   // value 长度大于 1024
-            "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"};
+        "",                    // value 为空字符串
+        strInvalid.toString(),            // value 长度为 1024
+        // value 长度大于 1024
+        "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"};
     //初始化 AB Testing SDK
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     for (String s : valueInvalid) {
       Experiment<String> experiment =
-              sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                      .addCustomId("wee", s)
-                      .build());
+          sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+              .addCustomId("wee", s)
+              .build());
       assertNotNull(experiment);
       assertEquals("a123", experiment.getDistinctId());
       assertTrue(experiment.getIsLoginId());
@@ -177,9 +182,9 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     //初始化 AB Testing SDK
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     Experiment<String> experiment =
-            sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                    .customIds(null)
-                    .build());
+        sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+            .customIds(null)
+            .build());
     assertNotNull(experiment);
     assertEquals("a123", experiment.getDistinctId());
     assertTrue(experiment.getIsLoginId());
@@ -196,16 +201,18 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
   @Test
   public void checkFastFetchWithInvalidCustomIds05() throws InvalidArgumentException {
     Map<String, String> customIds = Maps.newHashMap();
-    String[] customInvalid = {"date", "datetime", "distinct_id", "event", "events", "first_id", "id", "original_id", "properties", "second_id", "time", "user_id", "users"};
+    String[] customInvalid =
+        {"date", "datetime", "distinct_id", "event", "events", "first_id", "id", "original_id", "properties",
+            "second_id", "time", "user_id", "users"};
     //初始化 AB Testing SDK
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     for (String s : customInvalid) {
       customIds.clear();
       customIds.put(s, "eee");
       Experiment<String> experiment =
-              sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                      .customIds(customIds)
-                      .build());
+          sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+              .customIds(customIds)
+              .build());
       assertNotNull(experiment);
       assertEquals("a123", experiment.getDistinctId());
       assertTrue(experiment.getIsLoginId());
@@ -223,21 +230,22 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
   public void checkAsyncFetchWithInvalidCustomIds06() throws InvalidArgumentException {
     Map<String, String> customIds = Maps.newHashMap();
     String[] customInvalid = {null, // key 为 null
-            "",                     // key 为空字符串
-            "1122aaaa",             // key 开头是数字
-            "$1122aa",              // key 包含字符 $
-            "……%%",                 // key 包含特殊字符
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // key 为100个字符
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1"}; // key 超过 100个字符
+        "",                     // key 为空字符串
+        "1122aaaa",             // key 开头是数字
+        "$1122aa",              // key 包含字符 $
+        "……%%",                 // key 包含特殊字符
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        // key 为100个字符
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1"}; // key 超过 100个字符
     //初始化 AB Testing SDK
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     for (String s : customInvalid) {
       customIds.clear();
       customIds.put(s, "eee");
       Experiment<String> experiment =
-              sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                      .customIds(customIds)
-                      .build());
+          sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+              .customIds(customIds)
+              .build());
       assertNotNull(experiment);
       assertEquals("a123", experiment.getDistinctId());
       assertTrue(experiment.getIsLoginId());
@@ -259,29 +267,29 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
       strInvalid.append(i);
     }
     String[] valueInvalid = {null, // value 为 null
-            "",                    // value 为空字符串
-            strInvalid.toString(),            // value 长度为 1024
-            // value 长度大于 1024
-            "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-                    + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"};
+        "",                    // value 为空字符串
+        strInvalid.toString(),            // value 长度为 1024
+        // value 长度大于 1024
+        "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            + "a12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"};
     //初始化 AB Testing SDK
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     for (String s : valueInvalid) {
       customIds.clear();
       customIds.put("customIds", s);
       Experiment<String> experiment =
-              sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                      .customIds(customIds)
-                      .build());
+          sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+              .customIds(customIds)
+              .build());
       assertNotNull(experiment);
       assertEquals("a123", experiment.getDistinctId());
       assertTrue(experiment.getIsLoginId());
@@ -297,7 +305,8 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
    * 期望：实验缓存的 key 为 "distinct_id + login_id + anonymous_id + customs_ids"+实验内容
    */
   @Test
-  public void checkFastFetchExperimentCatch() throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+  public void checkFastFetchExperimentCatch()
+      throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
 
     Map<String, String> customIds = Maps.newHashMap();
     customIds.put("qwe", "qwe");
@@ -305,15 +314,15 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     initInnerClassInfo(sensorsABTest);
     Experiment<Integer> experiment =
-            sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
-                    .addCustomId("qwe", "qwe")
-                    .build());
+        sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
+            .addCustomId("qwe", "qwe")
+            .build());
 
     assertEquals("123", experiment.getResult().toString());
     JsonNode str = experimentResultCacheByReflect.getIfPresent(generateCacheKey("a123", true, customIds));
 
-    String expRes = "{\"status\":\"SUCCESS\",\"results\":[{\"abtest_experiment_id\":\"2\",\"abtest_experiment_group_id\":\"1\"," +
-            "\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"str_experiment\",\"type\":\"STRING\",\"value\":\"test\"},{\"name\":\"bool_experiment\",\"type\":\"BOOLEAN\",\"value\":\"false\"},{\"name\":\"int_experiment\",\"type\":\"INTEGER\",\"value\":\"123\"},{\"name\":\"json_experiment\",\"type\":\"JSON\",\"value\":\"{\\\"name\\\":\\\"hello\\\"}\"}]},{\"abtest_experiment_id\":\"14\",\"abtest_experiment_group_id\":\"1\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"int_abtest1\",\"type\":\"INTEGER\",\"value\":\"222\"}]}]}";
+    String expRes =
+        "{\"status\":\"SUCCESS\",\"results\":[{\"abtest_experiment_id\":\"2\",\"abtest_experiment_group_id\":\"1\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"str_experiment\",\"type\":\"STRING\",\"value\":\"test\"},{\"name\":\"bool_experiment\",\"type\":\"BOOLEAN\",\"value\":\"false\"},{\"name\":\"int_experiment\",\"type\":\"INTEGER\",\"value\":\"123\"},{\"name\":\"json_experiment\",\"type\":\"JSON\",\"value\":\"{\\\"name\\\":\\\"hello\\\"}\"}]},{\"abtest_experiment_id\":\"14\",\"abtest_experiment_group_id\":\"1\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"int_abtest1\",\"type\":\"INTEGER\",\"value\":\"222\"}]},{\"abtest_experiment_id\":\"14\",\"abtest_experiment_group_id\":\"-1\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"test_group_id\",\"type\":\"JSON\",\"value\":\"{\\\"name\\\":\\\"helloWord\\\"}\"}]},{\"abtest_experiment_id\":\"14\",\"abtest_experiment_group_id\":\"2\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"test_group_id2\",\"type\":\"JSON\",\"value\":\"{\\\"name\\\":\\\"helloWord2\\\"}\"}]},{\"abtest_experiment_id\":\"14\",\"abtest_experiment_group_id\":\"3\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"test_group_id3\",\"type\":\"JSON\",\"value\":\"{\\\"name\\\":\\\"helloWord3\\\"}\"}]}]}";
     assertNotNull(str);
     assertEquals(expRes, str.toString());
   }
@@ -324,7 +333,8 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
    * 会返回缓存的实验结果值
    */
   @Test
-  public void checkFastFetchExperimentCatch01() throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+  public void checkFastFetchExperimentCatch01()
+      throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
 
     Map<String, String> customIds = Maps.newHashMap();
     customIds.put("qwe", "qwe");
@@ -333,9 +343,9 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     initInnerClassInfo(sensorsABTest);
 
     Experiment<Integer> experiment =
-            sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
-                    .addCustomId("qwe", "qwe")
-                    .build());
+        sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
+            .addCustomId("qwe", "qwe")
+            .build());
 
     assertEquals("123", experiment.getResult().toString());
     JsonNode str = experimentResultCacheByReflect.getIfPresent(generateCacheKey("a123", true, customIds));
@@ -343,8 +353,8 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
 
     //TODO 现在是否请求网络需要人工检查日志，需要自动化
     experiment = sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
-            .addCustomId("qwe", "qwe")
-            .build());
+        .addCustomId("qwe", "qwe")
+        .build());
 
     assertEquals(123, experiment.getResult().intValue());
   }
@@ -354,7 +364,8 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
    * 期望：本地事件缓存内容应该新增 customs_ids
    */
   @Test
-  public void checkFastFetchEventCatch01() throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+  public void checkFastFetchEventCatch01()
+      throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
 
     Map<String, String> customIds = Maps.newHashMap();
     customIds.put("qwe", "qwe");
@@ -363,17 +374,18 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     initInnerClassInfo(sensorsABTest);
 
     Experiment<Integer> experiment =
-            sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
-                    .addCustomId("qwe", "qwe")
-                    .build());
+        sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
+            .addCustomId("qwe", "qwe")
+            .build());
 
     // 通过增加 customs_ids 生成的 key，去 get 事件缓存结果，如果不为空，则说明本地事件缓存内容新增了 customs_ids
-    Object res = eventCacheByReflect.getIfPresent(generateKey("a123", true, experiment.getAbTestExperimentId(), customIds));
+    Object res =
+        eventCacheByReflect.getIfPresent(generateKey("a123", true, experiment.getAbTestExperimentId(), customIds));
     assertNotNull(res);
 
     experiment = sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
-            .addCustomId("qwe", "qwe")
-            .build());
+        .addCustomId("qwe", "qwe")
+        .build());
 
     assertEquals(123, experiment.getResult().intValue());
   }
@@ -386,7 +398,8 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
    * 会返回实验结果值
    */
   @Test
-  public void checkFastFetchEventCatch02() throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
+  public void checkFastFetchEventCatch02()
+      throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException {
 
     Map<String, String> customIds = Maps.newHashMap();
     customIds.put("qwe", "qwe");
@@ -396,15 +409,15 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     initInnerClassInfo(sensorsABTest);
 
     Experiment<Integer> experiment =
-            sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
-                    .addCustomId("qwe", "qwe")
-                    .build());
+        sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
+            .addCustomId("qwe", "qwe")
+            .build());
     assertEquals(123, experiment.getResult().intValue());
     sa.flush();
 
     experiment = sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
-            .addCustomId("qwe", "qwe")
-            .build());
+        .addCustomId("qwe", "qwe")
+        .build());
 
     assertEquals(123, experiment.getResult().intValue());
     assertEquals(0, messageBuffer.length());
@@ -427,16 +440,16 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     initInnerClassInfo(sensorsABTest);
 
     Experiment<Integer> experiment =
-            sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
-                    .addCustomId("qwe", "qwe")
-                    .build());
+        sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
+            .addCustomId("qwe", "qwe")
+            .build());
     assertEquals(123, experiment.getResult().intValue());
 
     sa.flush();
 
     experiment = sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)
-            .addCustomId("customid2", "qwe")
-            .build());
+        .addCustomId("customid2", "qwe")
+        .build());
     //TODO 需要自动验证是否发送网络请求
 
     assertEquals(123, experiment.getResult().intValue());
@@ -456,11 +469,11 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     initSASDK();
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     Experiment<String> experiment =
-            sensorsABTest.fastFetchABTest(
-                    SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                            .addCustomId("custom_id", "test11")
-                            .addProperty("prop1", "value1")
-                            .build());
+        sensorsABTest.fastFetchABTest(
+            SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+                .addCustomId("custom_id", "test11")
+                .addProperty("prop1", "value1")
+                .build());
     assertNotNull(experiment);
     assertEquals("a123", experiment.getDistinctId());
     assertTrue(experiment.getIsLoginId());
@@ -481,17 +494,17 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     initSASDK();
     // 注册公共属性
     Map<String, Object> superProp = new HashMap<>();
-    superProp.put("custom_id1","id1");
-    superProp.put("custom_id2","id2");
+    superProp.put("custom_id1", "id1");
+    superProp.put("custom_id2", "id2");
     sa.registerSuperProperties(superProp);
 
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     sensorsABTest.fastFetchABTest(
-                    SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                            .addCustomId("custom_id1", "id1")
-                            .addCustomId("custom_id2", "id2")
-                            .addProperty("prop1", "value1")
-                            .build());
+        SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+            .addCustomId("custom_id1", "id1")
+            .addCustomId("custom_id2", "id2")
+            .addProperty("prop1", "value1")
+            .build());
 
     assertNotEquals(0, messageBuffer.length());
     JsonNode jsonNode = SensorsAnalyticsUtil.getJsonObjectMapper().readValue(messageBuffer.toString(), JsonNode.class);
@@ -513,10 +526,9 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
 
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     sensorsABTest.fastFetchABTest(
-            SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                    .addCustomId("custom_id1", "id1")
-                    .addProperty("prop1", "value1")
-                    .build());
+        SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+            .addProperty("prop1", "value1")
+            .build());
 
     assertNotEquals(0, messageBuffer.length());
     JsonNode jsonNode = SensorsAnalyticsUtil.getJsonObjectMapper().readValue(messageBuffer.toString(), JsonNode.class);
@@ -530,13 +542,14 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
   @Test
   @Ignore
   public void checkFastFetchOldEnv() throws InvalidArgumentException {
-    String apiUrl = "http://10.130.6.5:8202/api/v2/abtest/online/results?project-key=438B9364C98D54371751BA82F6484A1A03A5155E";
+    String apiUrl =
+        "http://10.130.6.5:8202/api/v2/abtest/online/results?project-key=438B9364C98D54371751BA82F6484A1A03A5155E";
     //初始化 AB Testing SDK
     initInstance(ABGlobalConfig.builder().setApiUrl(apiUrl).setSensorsAnalytics(sa).build());
     Experiment<Integer> experiment =
-            sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "agc", -1)
-                    .addCustomId("custom_id", "123")
-                    .build());
+        sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "agc", -1)
+            .addCustomId("custom_id", "123")
+            .build());
     assertNotNull(experiment);
     assertEquals("a123", experiment.getDistinctId());
     assertTrue(experiment.getIsLoginId());
@@ -552,7 +565,7 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     //初始化 AB Testing SDK
     initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
     Experiment<String> experiment =
-            sensorsABTest.fastFetchABTest("a123", true, "str_experiment", "grey");
+        sensorsABTest.fastFetchABTest("a123", true, "str_experiment", "grey");
 
     assertNotNull(experiment);
     assertEquals("a123", experiment.getDistinctId());
@@ -562,10 +575,49 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     assertEquals("1", experiment.getAbTestExperimentGroupId());
 
     sensorsABTest.fastFetchABTest(
-            SensorsABParams.starter("a123", true, "str_experiment", "qwe")
-                    .addCustomId("custom_id", "test11")
-                    .build());
+        SensorsABParams.starter("a123", true, "str_experiment", "qwe")
+            .addCustomId("custom_id", "test11")
+            .build());
     //TODO 自动化校验请求
+  }
+
+  /**
+   * fastFetchABTest 请求，携带一个正确的 customIds
+   * 期望：properties 字段中存在 custom_id
+   */
+  @Test
+  @Ignore
+  public void checkFastFetchWithCustomIds2()
+      throws InvalidArgumentException, NoSuchFieldException, IllegalAccessException, IOException {
+    //初始化 AB Testing SDK
+    initSASDK();
+    initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
+    initInnerClassInfo(sensorsABTest);
+    HashMap<String, String> customIdMap = new HashMap<>();
+    customIdMap.put("custom_id", "test11");
+    Experiment<String> result =
+        sensorsABTest.fastFetchABTest(
+            SensorsABParams.starter("a123", false, "test_group_id2", "{\"color\":\"grey\"}").customIds(
+                customIdMap).build());
+    initInnerClassInfo(sensorsABTest);
+
+    // 检查试验结果
+    assertEquals("a123", result.getDistinctId());
+    assertEquals(false, result.getIsLoginId());
+    assertEquals("2", result.getAbTestExperimentGroupId());
+
+    // 检查事件缓存
+    assertEquals(1, eventCacheByReflect.size());
+
+    if (messageBuffer != null) {
+      assertNotEquals(0, messageBuffer.length());
+      JsonNode jsonNode =
+          SensorsAnalyticsUtil.getJsonObjectMapper().readValue(messageBuffer.toString(), JsonNode.class);
+      assertEquals("\"$ABTestTrigger\"", jsonNode.get("event").toString());
+      // 验证属性中是否包含 custom_id
+      assertEquals("\"test11\"", jsonNode.get("properties").get("custom_id").toString());
+    }
+    assertNotNull(result.getResult());
   }
 
 }
