@@ -66,6 +66,9 @@ public class ABGlobalConfig implements Serializable {
   @Getter
   private final Integer maxPerRoute;
 
+  @Getter
+  private final LogLevelEnum logLevel;
+
   public static Builder builder() {
     return new Builder();
   }
@@ -82,6 +85,7 @@ public class ABGlobalConfig implements Serializable {
         ", sensorsAnalytics=" + sensorsAnalytics +
         ", maxTotal=" + maxTotal +
         ", maxPerRoute=" + maxPerRoute +
+        ", logLevel=" + logLevel +
         '}';
   }
 
@@ -96,6 +100,7 @@ public class ABGlobalConfig implements Serializable {
     private ISensorsAnalytics sensorsAnalytics;
     private Integer maxTotal;
     private Integer maxPerRoute;
+    private LogLevelEnum logLevel;
 
     public ABGlobalConfig build() throws InvalidArgumentException {
       if (apiUrl == null || apiUrl.length() == 0) {
@@ -125,8 +130,11 @@ public class ABGlobalConfig implements Serializable {
       if (maxPerRoute == null) {
         maxPerRoute = 400;
       }
+      if (logLevel == null) {
+        logLevel = LogLevelEnum.INFO;
+      }
       return new ABGlobalConfig(eventCacheTime, eventCacheSize, experimentCacheSize,
-          experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, maxTotal, maxPerRoute);
+          experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, maxTotal, maxPerRoute, logLevel);
     }
 
     public ABGlobalConfig.Builder setEventCacheTime(Integer eventCacheTime) {
@@ -171,6 +179,11 @@ public class ABGlobalConfig implements Serializable {
 
     public ABGlobalConfig.Builder setMaxPerRoute(Integer maxPerRoute) {
       this.maxPerRoute = maxPerRoute;
+      return this;
+    }
+
+    public ABGlobalConfig.Builder setLogLevel(LogLevelEnum logLevel) {
+      this.logLevel = logLevel;
       return this;
     }
   }

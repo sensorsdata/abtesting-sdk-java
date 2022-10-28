@@ -1,9 +1,9 @@
 package com.sensorsdata.analytics.javasdk.util;
 
 import com.sensorsdata.analytics.javasdk.SensorsABParams;
+import com.sensorsdata.analytics.javasdk.common.Pair;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
  * @version 1.0.0
  * @since 2021/06/15 10:28
  */
-@Slf4j
 public class ABTestUtil {
 
   /**
@@ -88,51 +87,52 @@ public class ABTestUtil {
     return newProperties;
   }
 
-  public static <T> boolean assertCustomIds(SensorsABParams<T> sensorsParams) {
+  public static <T> Pair<Boolean, String> assertCustomIds(SensorsABParams<T> sensorsParams) {
     Map<String, String> customIds = sensorsParams.getCustomIds();
     if (customIds == null || customIds.isEmpty()) {
-      log.debug("fetchABTest request without customIds.[distinctId:{},isLoginId:{},experiment:{}]",
+      String message = String.format("fetchABTest request without customIds.[distinctId:%s,isLoginId:%s,experiment:%s]",
           sensorsParams.getDistinctId(), sensorsParams.getIsLoginId(), sensorsParams.getExperimentVariableName());
-      return false;
+      return Pair.of(false, message);
     }
     for (Map.Entry<String, String> entry : customIds.entrySet()) {
       if (StringUtils.isBlank(entry.getKey())) {
-        log.warn(
-            "fetchABTest request with invalid customIds,the keys of customIds has null or empty.[distinctId:{},isLoginId:{},experiment:{},customIds:{}]",
+        String message = String.format(
+            "fetchABTest request with invalid customIds,the keys of customIds has null or empty.[distinctId:%s,isLoginId:%s,experiment:%s,customIds:%s]",
             sensorsParams.getDistinctId(),
             sensorsParams.getIsLoginId(),
             sensorsParams.getExperimentVariableName(),
             map2Str(customIds));
-        return true;
+        return Pair.of(true, message);
       }
       if (!pattern.matcher(entry.getKey()).matches()) {
-        log.warn("fetchABTest request with invalid customIds,the key mismatch.[distinctId:{},isLoginId:{},experiment:{},customIds:{}]",
+        String message = String.format(
+            "fetchABTest request with invalid customIds,the key mismatch.[distinctId:%s,isLoginId:%s,experiment:%s,customIds:%s]",
             sensorsParams.getDistinctId(),
             sensorsParams.getIsLoginId(),
             sensorsParams.getExperimentVariableName(),
             map2Str(customIds));
-        return true;
+        return Pair.of(true, message);
       }
       if (StringUtils.isBlank(entry.getValue())) {
-        log.warn(
-            "fetchABTest request with invalid customIds,the value of customIds has null or empty.[distinctId:{},isLoginId:{},experiment:{},customIds:{}]",
+        String message = String.format(
+            "fetchABTest request with invalid customIds,the value of customIds has null or empty.[distinctId:%s,isLoginId:%s,experiment:%s,customIds:%s]",
             sensorsParams.getDistinctId(),
             sensorsParams.getIsLoginId(),
             sensorsParams.getExperimentVariableName(),
             map2Str(customIds));
-        return true;
+        return Pair.of(true, message);
       }
       if (entry.getValue().length() > MAX_PROPERTY_LENGTH) {
-        log.warn(
-            "fetchABTest request with invalid customIds,the value length is too long.[distinctId:{},isLoginId:{},experiment:{},customIds:{}]",
+        String message = String.format(
+            "fetchABTest request with invalid customIds,the value length is too long.[distinctId:%s,isLoginId:%s,experiment:%s,customIds:%s]",
             sensorsParams.getDistinctId(),
             sensorsParams.getIsLoginId(),
             sensorsParams.getExperimentVariableName(),
             map2Str(customIds));
-        return true;
+        return Pair.of(true, message);
       }
     }
-    return false;
+    return Pair.of(false, "");
   }
 
   public static String map2Str(Map<String, String> customIds) {

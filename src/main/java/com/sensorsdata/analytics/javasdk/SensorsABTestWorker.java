@@ -4,9 +4,11 @@ import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
 import com.sensorsdata.analytics.javasdk.cache.EventCacheManager;
 import com.sensorsdata.analytics.javasdk.cache.ExperimentCacheManager;
+import com.sensorsdata.analytics.javasdk.common.Pair;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import com.sensorsdata.analytics.javasdk.util.ABTestUtil;
 import com.sensorsdata.analytics.javasdk.util.HttpConsumer;
+import com.sensorsdata.analytics.javasdk.util.LogUtil;
 import com.sensorsdata.analytics.javasdk.util.SensorsAnalyticsUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,9 +17,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -33,8 +35,9 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2021/06/16 15:12
  */
-@Slf4j
 class SensorsABTestWorker {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(SensorsABTestWorker.class);
 
   private final ObjectMapper objectMapper;
   /**
@@ -58,6 +61,8 @@ class SensorsABTestWorker {
    */
   private final HttpConsumer httpConsumer;
 
+  private final LogUtil log;
+
   SensorsABTestWorker(ABGlobalConfig config) {
     this.config = config;
     this.objectMapper = SensorsAnalyticsUtil.getJsonObjectMapper();
@@ -71,6 +76,7 @@ class SensorsABTestWorker {
         config.getApiUrl(),
         config.getMaxTotal(),
         config.getMaxPerRoute());
+    log = new LogUtil(LOGGER, config.getLogLevel());
     log.info("init SensorsABTest with config info:{}.", config);
   }
 
@@ -106,7 +112,9 @@ class SensorsABTestWorker {
           sensorsParams.getIsLoginId(),
           sensorsParams.getDefaultValue());
     }
-    if (ABTestUtil.assertCustomIds(sensorsParams)) {
+    Pair<Boolean, String> customIdCheckRes = ABTestUtil.assertCustomIds(sensorsParams);
+    if (customIdCheckRes.getKey()) {
+      log.warn(customIdCheckRes.getValue());
       return new Experiment<>(
           sensorsParams.getDistinctId(),
           sensorsParams.getIsLoginId(),
@@ -268,8 +276,6 @@ class SensorsABTestWorker {
           && res.findValue(SensorsABTestConst.RESULTS_KEY).size() > 0) {
         return res;
       }
-      log.error("The server return incorrect information.[errorMessage:{},distinctId:{},experimentName:{}]",
-          result, distinctId, experimentName);
       return null;
     } catch (InvalidArgumentException e) {
       log.error("Invalid custom properties,{},[distinctId:{},isLoginId:{},experimentName:{}]",
