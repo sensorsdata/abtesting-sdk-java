@@ -3,6 +3,8 @@ package com.sensorsdata.analytics.javasdk;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.cache.LoadingCache;
 import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
+import com.sensorsdata.analytics.javasdk.bean.cache.ExperimentGroupConfig;
+import com.sensorsdata.analytics.javasdk.bean.cache.UserHitExperiment;
 import com.sensorsdata.analytics.javasdk.cache.EventCacheManager;
 import com.sensorsdata.analytics.javasdk.cache.ExperimentCacheManager;
 import com.sensorsdata.analytics.javasdk.consumer.ConcurrentLoggingConsumer;
@@ -20,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.sensorsdata.analytics.javasdk.util.ABTestUtil.map2Str;
 import static org.junit.Assert.*;
@@ -48,7 +51,10 @@ public class SensorsBaseTest {
   protected ExperimentCacheManager experimentCacheManagerByReflect;
 
   //试验结果缓存对象
-  protected LoadingCache<String, JsonNode> experimentResultCacheByReflect;
+  protected LoadingCache<String, UserHitExperiment> experimentResultCacheByReflect;
+
+
+  protected ConcurrentHashMap<String, ExperimentGroupConfig> experimentGroupConfigCacheByReflect;
 
   //事件缓存管理器
   protected EventCacheManager eventCacheManagerByReflect;
@@ -141,6 +147,7 @@ public class SensorsBaseTest {
     experimentResultCacheByReflect = getExperimentResultCacheByReflect(experimentCacheManagerByReflect);
     eventCacheManagerByReflect = getEventCacheManagerByReflect(abTestWorkerByReflect);
     eventCacheByReflect = getEventCacheByReflect(eventCacheManagerByReflect);
+    experimentGroupConfigCacheByReflect = getExperimentGroupCacheByReflect(experimentCacheManagerByReflect);
   }
 
   protected String generateCacheKey(String distinctId, boolean isLoginId, Map<String, String> customIds) {
@@ -165,6 +172,17 @@ public class SensorsBaseTest {
       fail();
     }
     return key;
+  }
+
+  /**
+   * 生成元数据缓存的key experimentId_experimentGroupId
+   *
+   * @param experimentId      试验ID
+   * @param experimentGroupId 试验组ID
+   * @return 元数据缓存key
+   */
+  protected String generateExperimentGroupConfigCacheKey(String experimentId, String experimentGroupId) {
+    return String.format("%s_%s", experimentId, experimentGroupId);
   }
 
   /**
@@ -209,7 +227,7 @@ public class SensorsBaseTest {
    * @param experimentCacheManager ExperimentCacheManager
    * @return LoadingCache<String, Object>
    */
-  protected LoadingCache<String, JsonNode> getExperimentResultCacheByReflect(
+  protected LoadingCache<String, UserHitExperiment> getExperimentResultCacheByReflect(
       ExperimentCacheManager experimentCacheManager)
       throws NoSuchFieldException, IllegalAccessException {
 
@@ -217,7 +235,7 @@ public class SensorsBaseTest {
 
     Field cacheField = experimentCacheManagerClass.getDeclaredField("experimentResultCache");
     cacheField.setAccessible(true);
-    return (LoadingCache<String, JsonNode>) cacheField.get(experimentCacheManager);
+    return (LoadingCache<String, UserHitExperiment>) cacheField.get(experimentCacheManager);
   }
 
   /**
@@ -246,6 +264,23 @@ public class SensorsBaseTest {
     Field cacheField = eventCacheManagerClass.getDeclaredField("eventCache");
     cacheField.setAccessible(true);
     return (LoadingCache<String, Object>) cacheField.get(eventCacheManager);
+  }
+
+  /**
+   * 通过反射 experimentCacheManager 实例获取试验组配置缓存
+   *
+   * @param experimentCacheManager 试验配置管理
+   * @return 试验组配置缓存
+   * @throws NoSuchFieldException
+   * @throws IllegalAccessException
+   */
+  protected ConcurrentHashMap<String, ExperimentGroupConfig> getExperimentGroupCacheByReflect(
+      ExperimentCacheManager experimentCacheManager)
+      throws NoSuchFieldException, IllegalAccessException {
+    Class<? extends ExperimentCacheManager> eventCacheManagerClass = experimentCacheManager.getClass();
+    Field cacheField = eventCacheManagerClass.getDeclaredField("experimentGroupConfigCache");
+    cacheField.setAccessible(true);
+    return (ConcurrentHashMap<String, ExperimentGroupConfig>) cacheField.get(experimentCacheManager);
   }
 
 

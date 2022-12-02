@@ -5,6 +5,9 @@ import com.google.common.collect.Maps;
 
 import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
+import com.sensorsdata.analytics.javasdk.bean.cache.ExperimentGroupConfig;
+import com.sensorsdata.analytics.javasdk.bean.cache.UserHitExperimentGroup;
+import com.sensorsdata.analytics.javasdk.bean.cache.UserHitExperiment;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import com.sensorsdata.analytics.javasdk.util.SensorsAnalyticsUtil;
 
@@ -15,7 +18,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
 
@@ -319,12 +321,19 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
             .build());
 
     assertEquals("123", experiment.getResult().toString());
-    JsonNode str = experimentResultCacheByReflect.getIfPresent(generateCacheKey("a123", true, customIds));
+    UserHitExperiment userHitExperiment = experimentResultCacheByReflect.getIfPresent(generateCacheKey("a123", true, customIds));
 
-    String expRes =
-        "{\"status\":\"SUCCESS\",\"results\":[{\"abtest_experiment_id\":\"2\",\"abtest_experiment_group_id\":\"1\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"str_experiment\",\"type\":\"STRING\",\"value\":\"test\"},{\"name\":\"bool_experiment\",\"type\":\"BOOLEAN\",\"value\":\"false\"},{\"name\":\"int_experiment\",\"type\":\"INTEGER\",\"value\":\"123\"},{\"name\":\"json_experiment\",\"type\":\"JSON\",\"value\":\"{\\\"name\\\":\\\"hello\\\"}\"}]},{\"abtest_experiment_id\":\"14\",\"abtest_experiment_group_id\":\"1\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"int_abtest1\",\"type\":\"INTEGER\",\"value\":\"222\"}]},{\"abtest_experiment_id\":\"14\",\"abtest_experiment_group_id\":\"-1\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"test_group_id\",\"type\":\"JSON\",\"value\":\"{\\\"name\\\":\\\"helloWord\\\"}\"}]},{\"abtest_experiment_id\":\"14\",\"abtest_experiment_group_id\":\"2\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"test_group_id2\",\"type\":\"JSON\",\"value\":\"{\\\"name\\\":\\\"helloWord2\\\"}\"}]},{\"abtest_experiment_id\":\"14\",\"abtest_experiment_group_id\":\"3\",\"is_control_group\":false,\"is_white_list\":false,\"experiment_type\":\"CODE\",\"variables\":[{\"name\":\"test_group_id3\",\"type\":\"JSON\",\"value\":\"{\\\"name\\\":\\\"helloWord3\\\"}\"}]}]}";
-    assertNotNull(str);
-    assertEquals(expRes, str.toString());
+    Map<String, UserHitExperimentGroup> userHitExperimentMap = userHitExperiment.getUserHitExperimentMap();
+    assertEquals(5, userHitExperimentMap.size());
+
+    ExperimentGroupConfig experimentGroupConfig = userHitExperimentMap.get("2").getExperimentGroupConfig();
+    assertEquals("2", experimentGroupConfig.getExperimentId());
+    assertEquals("1", experimentGroupConfig.getExperimentGroupId());
+    assertEquals(4, experimentGroupConfig.getVariableMap().size());
+    experimentGroupConfig = userHitExperimentMap.get("6").getExperimentGroupConfig();
+    assertEquals("test_group_id3", experimentGroupConfig.getVariableMap().get("test_group_id3").getName());
+    assertEquals("JSON", experimentGroupConfig.getVariableMap().get("test_group_id3").getType());
+    assertEquals("{\"name\":\"helloWord3\"}", experimentGroupConfig.getVariableMap().get("test_group_id3").getValue());
   }
 
   /**
@@ -348,8 +357,8 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
             .build());
 
     assertEquals("123", experiment.getResult().toString());
-    JsonNode str = experimentResultCacheByReflect.getIfPresent(generateCacheKey("a123", true, customIds));
-    assertNotNull(str);
+    UserHitExperiment userHitExperiment = experimentResultCacheByReflect.getIfPresent(generateCacheKey("a123", true, customIds));
+    assertNotNull(userHitExperiment);
 
     //TODO 现在是否请求网络需要人工检查日志，需要自动化
     experiment = sensorsABTest.fastFetchABTest(SensorsABParams.starter("a123", true, "int_experiment", -1)

@@ -346,7 +346,7 @@ public interface ISensorsABTest {
    * @param experiment 试验结果
    * @param properties 请求参数
    * @param customIds  自定义分流主体
-   * @throws InvalidArgumentException 参数校验不合法抛出该异常
+   * @throws com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException 参数校验不合法抛出该异常
    */
   <T> void trackABTestTrigger(Experiment<T> experiment, Map<String, Object> properties,
       Map<String, String> customIds) throws InvalidArgumentException;

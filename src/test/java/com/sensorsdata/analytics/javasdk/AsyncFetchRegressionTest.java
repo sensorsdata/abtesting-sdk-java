@@ -356,7 +356,7 @@ public class AsyncFetchRegressionTest extends SensorsBaseTest {
     assertEquals(0, experimentCacheManagerByReflect.getCacheSize());
 
     // 检查事件缓存
-    assertEquals(1, eventCacheByReflect.size());
+    assertEquals(2, eventCacheByReflect.size());
     assertEquals("3", eventCacheByReflect.getIfPresent(generateKey(result2.getDistinctId(), result2.getIsLoginId(), result2.getAbTestExperimentId(), customIdMap)));
   }
 

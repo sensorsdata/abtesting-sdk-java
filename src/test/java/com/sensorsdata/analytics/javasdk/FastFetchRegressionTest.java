@@ -3,6 +3,7 @@ package com.sensorsdata.analytics.javasdk;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
+import com.sensorsdata.analytics.javasdk.bean.cache.ExperimentGroupConfig;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 import com.sensorsdata.analytics.javasdk.util.SensorsAnalyticsUtil;
 import org.junit.Before;
@@ -47,6 +48,7 @@ public class FastFetchRegressionTest extends SensorsBaseTest {
 
         // fastFetchABTest 接口存储实验缓存
         assertEquals(1, experimentCacheManagerByReflect.getCacheSize());
+        assertEquals(5, experimentGroupConfigCacheByReflect.size());
 
         // 检查事件缓存
         assertEquals(1, eventCacheByReflect.size());
@@ -204,8 +206,33 @@ public class FastFetchRegressionTest extends SensorsBaseTest {
         assertEquals(123, result.getResult().intValue());
 
         assertEquals(1, experimentCacheManagerByReflect.getCacheSize());
+        checkCurrentHitExperimentGroupConfig(experimentName, result);
+        checkGeneralExperimentGroupConfig();
 
         assertNotNull(result.getResult());
+    }
+
+    private void checkCurrentHitExperimentGroupConfig(String experimentName, Experiment<Integer> result) {
+        assertEquals(5, experimentGroupConfigCacheByReflect.size());
+        ExperimentGroupConfig experimentGroupConfig = experimentGroupConfigCacheByReflect.get(
+            generateExperimentGroupConfigCacheKey(result.getAbTestExperimentId(),
+                result.getAbTestExperimentGroupId()));
+        assertEquals(experimentName,experimentGroupConfig.getVariableMap().get(experimentName).getName());
+        assertEquals("INTEGER",experimentGroupConfig.getVariableMap().get(experimentName).getType());
+        assertEquals(result.getResult(),Integer.valueOf(experimentGroupConfig.getVariableMap().get(experimentName).getValue()));
+    }
+
+    private void checkGeneralExperimentGroupConfig(){
+        String experimentName = "int_abtest1";
+        String type = "INTEGER";
+        String value = "222";
+        ExperimentGroupConfig experimentGroupConfig =
+            experimentGroupConfigCacheByReflect.get(generateExperimentGroupConfigCacheKey("3", "1"));
+
+        assertEquals(experimentName,experimentGroupConfig.getVariableMap().get(experimentName).getName());
+        assertEquals(type,experimentGroupConfig.getVariableMap().get(experimentName).getType());
+        assertEquals(value,experimentGroupConfig.getVariableMap().get(experimentName).getValue());
+
     }
 
     /**
@@ -239,6 +266,7 @@ public class FastFetchRegressionTest extends SensorsBaseTest {
         assertFalse(result.getIsWhiteList());
         initInnerClassInfo(sensorsABTest);
         assertEquals(1, experimentCacheManagerByReflect.getCacheSize());
+        assertEquals(5, experimentGroupConfigCacheByReflect.size());
         assertNotNull(result.getResult());
     }
 
@@ -261,6 +289,25 @@ public class FastFetchRegressionTest extends SensorsBaseTest {
         assertFalse(result.getIsWhiteList());
         initInnerClassInfo(sensorsABTest);
         assertEquals(1, experimentCacheManagerByReflect.getCacheSize());
+        assertEquals(5, experimentGroupConfigCacheByReflect.size());
+        assertNotNull(result.getResult());
+    }
+
+    /**
+     * 未命中请求的试验，依然更新试验组配置
+     */
+    @Test
+    public void fastFetchABTest08() throws NoSuchFieldException, IllegalAccessException, InvalidArgumentException {
+        //初始化 AB Testing SDK
+        initInstance(ABGlobalConfig.builder().setApiUrl(url).setSensorsAnalytics(sa).build());
+        String distinctId = "123456";
+        Experiment<Integer> result = sensorsABTest.fastFetchABTest(distinctId, true, "illegal_param", -1, false);
+        assertEquals(distinctId, result.getDistinctId());
+        assertEquals(true, result.getIsLoginId());
+        assertEquals(Integer.valueOf(-1), result.getResult());
+        initInnerClassInfo(sensorsABTest);
+        assertEquals(1, experimentCacheManagerByReflect.getCacheSize());
+        assertEquals(5, experimentGroupConfigCacheByReflect.size());
         assertNotNull(result.getResult());
     }
 
@@ -277,8 +324,10 @@ public class FastFetchRegressionTest extends SensorsBaseTest {
         abTest1.fastFetchABTest("a123", true, "int_experiment", -1);
         initInnerClassInfo(abTest1);
         assertEquals(1, experimentCacheManagerByReflect.getCacheSize());
+        assertEquals(5, experimentGroupConfigCacheByReflect.size());
         initInnerClassInfo(abTest2);
         assertEquals(0, experimentCacheManagerByReflect.getCacheSize());
+        assertEquals(0, experimentGroupConfigCacheByReflect.size());
     }
 
     /**

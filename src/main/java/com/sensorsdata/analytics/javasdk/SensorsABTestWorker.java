@@ -1,7 +1,13 @@
 package com.sensorsdata.analytics.javasdk;
 
+import static com.sensorsdata.analytics.javasdk.SensorsABTestConst.NAME_KEY;
+import static com.sensorsdata.analytics.javasdk.SensorsABTestConst.TYPE_KEY;
+import static com.sensorsdata.analytics.javasdk.SensorsABTestConst.VALUE_KEY;
+
 import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
+import com.sensorsdata.analytics.javasdk.bean.cache.UserHitExperimentGroup;
+import com.sensorsdata.analytics.javasdk.bean.cache.Variable;
 import com.sensorsdata.analytics.javasdk.cache.EventCacheManager;
 import com.sensorsdata.analytics.javasdk.cache.ExperimentCacheManager;
 import com.sensorsdata.analytics.javasdk.common.Pair;
@@ -121,18 +127,20 @@ class SensorsABTestWorker {
           sensorsParams.getDefaultValue());
     }
     JsonNode experiment;
+    UserHitExperimentGroup userHitExperimentGroup;
+    Experiment<T> result = null;
     //判断是否需要读取结果缓存
     if (sensorsParams.getEnableCache()) {
       log.debug("Enable priority read experiment of cache.[distinctId:{};experimentVariableName:{}]",
           sensorsParams.getDistinctId(),
           sensorsParams.getExperimentVariableName());
-      experiment = experimentCacheManager.getExperimentResultByCache(
+      userHitExperimentGroup = experimentCacheManager.getExperimentResultByCache(
           sensorsParams.getDistinctId(),
           sensorsParams.getIsLoginId(),
           sensorsParams.getCustomIds(),
           sensorsParams.getExperimentVariableName());
       //未命中缓存
-      if (experiment == null) {
+      if (userHitExperimentGroup == null) {
         log.debug("Not hit experiment cache,making network request.[distinctId:{};experimentVariableName:{}]",
             sensorsParams.getDistinctId(),
             sensorsParams.getExperimentVariableName());
@@ -151,7 +159,17 @@ class SensorsABTestWorker {
               sensorsParams.getDistinctId(),
               sensorsParams.getIsLoginId(),
               sensorsParams.getCustomIds(), experiment);
+          result = convertExperiment(experiment,
+              sensorsParams.getDistinctId(),
+              sensorsParams.getIsLoginId(),
+              sensorsParams.getExperimentVariableName(),
+              sensorsParams.getDefaultValue());
         }
+      }else{
+        result = convertExperiment(userHitExperimentGroup, sensorsParams.getDistinctId(),
+            sensorsParams.getIsLoginId(),
+            sensorsParams.getExperimentVariableName(),
+            sensorsParams.getDefaultValue());
       }
     } else {
       log.debug("Get results from server.[distinctId:{};experimentVariableName:{}]",
@@ -164,12 +182,12 @@ class SensorsABTestWorker {
           sensorsParams.getTimeoutMilliseconds(),
           sensorsParams.getProperties(),
           sensorsParams.getCustomIds());
+      result = convertExperiment(experiment,
+          sensorsParams.getDistinctId(),
+          sensorsParams.getIsLoginId(),
+          sensorsParams.getExperimentVariableName(),
+          sensorsParams.getDefaultValue());
     }
-    Experiment<T> result = convertExperiment(experiment,
-        sensorsParams.getDistinctId(),
-        sensorsParams.getIsLoginId(),
-        sensorsParams.getExperimentVariableName(),
-        sensorsParams.getDefaultValue());
     //判断是否需要自动触发上报事件
     if (sensorsParams.getEnableAutoTrackEvent()) {
       try {
@@ -184,12 +202,31 @@ class SensorsABTestWorker {
     return result;
   }
 
+  private <T> Experiment<T> convertExperiment(UserHitExperimentGroup userHitExperimentGroup, String distinctId,
+      Boolean isLoginId, String experimentVariableName, T defaultValue) {
+    if (userHitExperimentGroup == null) {
+      log.info("The experiment result is null,return defaultValue.[distinctId:{},experimentVariableName:{}]",
+          distinctId, experimentVariableName);
+      return new Experiment<>(distinctId, isLoginId, defaultValue);
+    }
+    Variable variable = userHitExperimentGroup.getExperimentGroupConfig()
+        .getVariableMap().get(experimentVariableName);
+
+    T value = hitExperimentValue(variable, experimentVariableName, defaultValue);
+    if (value != null) {
+      return new Experiment<>(distinctId, isLoginId, String.valueOf(userHitExperimentGroup.getExperimentGroupConfig().getExperimentId()),
+          String.valueOf(userHitExperimentGroup.getExperimentGroupConfig().getExperimentGroupId()),
+          userHitExperimentGroup.getExperimentGroupConfig().isControlGroup(), userHitExperimentGroup.isWhiteList(), value);
+    }
+    return new Experiment<>(distinctId, isLoginId, defaultValue);
+  }
+
   /**
    * 触发 $ABTestTrigger 事件上报
    *
    * @param result     试验结果
    * @param properties 请求参数
-   * @throws InvalidArgumentException 上报事件的时候对上报事件参数进行校验，如果参数不合法，则抛出异常 InvalidArgumentException
+   * @throws com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException 上报事件的时候对上报事件参数进行校验，如果参数不合法，则抛出异常 InvalidArgumentException
    */
   <T> void trackABTestTrigger(Experiment<T> result, Map<String, Object> properties, Map<String, String> customIds)
       throws InvalidArgumentException {
@@ -337,33 +374,54 @@ class SensorsABTestWorker {
    */
   @SuppressWarnings("unchecked")
   private <T> T hitExperimentValue(JsonNode variable, String experimentVariableName, T defaultValue) {
-    if (!experimentVariableName.equals(variable.findValue("name").asText())) {
+    if (!experimentVariableName.equals(variable.findValue(NAME_KEY).asText())) {
       return null;
     }
-    JsonNode value = variable.findValue("value");
+    JsonNode value = variable.findValue(VALUE_KEY);
     if (value == null) {
       return null;
     }
-    switch (variable.findValue("type").asText()) {
+    return getExperimentValue(variable.findValue(TYPE_KEY).asText(), defaultValue, value.asText());
+  }
+
+
+  /**
+   * 判断是否命中试验变量值（缓存状态）
+   *
+   * @param variable               返回试验变量
+   * @param experimentVariableName 试验名
+   * @param defaultValue           默认值
+   * @param <T>
+   * @return 默认值与返回值类型匹配，则返回结果；默认值与返回值类型不匹配则返回null
+   */
+  private <T> T hitExperimentValue(Variable variable, String experimentVariableName, T defaultValue) {
+    if (variable == null || variable.getName() == null || !variable.getName().equals(experimentVariableName)) {
+      return null;
+    }
+    return getExperimentValue(variable.getType(), defaultValue, variable.getValue());
+  }
+
+  private static <T> T getExperimentValue(String type, T defaultValue, String value) {
+    switch (type) {
       case "STRING":
         if (defaultValue instanceof String) {
-          return (T) value.asText();
+          return (T) value;
         }
         break;
       case "INTEGER":
         if (defaultValue instanceof Integer) {
-          return (T) Integer.valueOf(value.asInt());
+          return (T) Integer.valueOf(value);
         }
         break;
       case "JSON":
         if (defaultValue instanceof String && ((String) defaultValue).startsWith("{")
             && ((String) defaultValue).endsWith("}")) {
-          return (T) value.asText();
+          return (T) value;
         }
         break;
       case "BOOLEAN":
         if (defaultValue instanceof Boolean) {
-          return (T) Boolean.valueOf(value.asBoolean());
+          return (T) Boolean.valueOf(value);
         }
         break;
       //未命中类型

@@ -16,7 +16,7 @@ public class SensorsABTestConst {
 
   static final String JAVA = "Java";
 
-  static final String VERSION = "0.0.6";
+  static final String VERSION = "0.0.7";
 
   static final String VERSION_KEY = "abtest_lib_version";
 
@@ -31,13 +31,21 @@ public class SensorsABTestConst {
   /**
    * 返回json里面的key
    */
-  static final String EXPERIMENT_ID_KEY = "abtest_experiment_id";
-  static final String EXPERIMENT_GROUP_ID_KEY = "abtest_experiment_group_id";
-  static final String IS_CONTROL_GROUP_KEY = "is_control_group";
-  static final String IS_WHITE_LIST_KEY = "is_white_list";
+  public static final String EXPERIMENT_ID_KEY = "abtest_experiment_id";
+  public static final String EXPERIMENT_GROUP_ID_KEY = "abtest_experiment_group_id";
+
+  public static final String ABTEST_UNIQUE_ID = "abtest_unique_id";
+  public static final String IS_CONTROL_GROUP_KEY = "is_control_group";
+  public static final String IS_WHITE_LIST_KEY = "is_white_list";
   public static final String VARIABLES_KEY = "variables";
   public static final String RESULTS_KEY = "results";
   public static final String STATUS_KEY = "status";
+
+  public static final String NAME_KEY = "name";
+
+  public static final String TYPE_KEY = "type";
+
+  public static final String VALUE_KEY = "value";
   public static final String SUCCESS = "SUCCESS";
   
   // 自定义主体 id
