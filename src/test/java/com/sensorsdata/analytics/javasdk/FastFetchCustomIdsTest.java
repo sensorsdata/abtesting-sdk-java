@@ -327,8 +327,8 @@ public class FastFetchCustomIdsTest extends SensorsBaseTest {
     assertEquals(5, userHitExperimentMap.size());
 
     ExperimentGroupConfig experimentGroupConfig = userHitExperimentMap.get("2").getExperimentGroupConfig();
-    assertEquals("2", experimentGroupConfig.getExperimentId());
-    assertEquals("1", experimentGroupConfig.getExperimentGroupId());
+    assertEquals("2", experimentGroupConfig.getAbtestExperimentId());
+    assertEquals("1", experimentGroupConfig.getAbtestExperimentGroupId());
     assertEquals(4, experimentGroupConfig.getVariableMap().size());
     experimentGroupConfig = userHitExperimentMap.get("6").getExperimentGroupConfig();
     assertEquals("test_group_id3", experimentGroupConfig.getVariableMap().get("test_group_id3").getName());

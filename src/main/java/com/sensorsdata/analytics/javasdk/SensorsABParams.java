@@ -1,7 +1,6 @@
 package com.sensorsdata.analytics.javasdk;
 
 import com.google.common.collect.Maps;
-import lombok.Getter;
 
 import java.util.Map;
 
@@ -12,7 +11,6 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2021/10/22 15:42
  */
-@Getter
 public class SensorsABParams<T> {
   /**
    * 匿名ID/业务ID
@@ -199,5 +197,41 @@ public class SensorsABParams<T> {
       this.customIds.put(key, value);
       return this;
     }
+  }
+
+  public String getDistinctId() {
+    return distinctId;
+  }
+
+  public Boolean getIsLoginId() {
+    return isLoginId;
+  }
+
+  public String getExperimentVariableName() {
+    return experimentVariableName;
+  }
+
+  public T getDefaultValue() {
+    return defaultValue;
+  }
+
+  public Boolean getEnableAutoTrackEvent() {
+    return enableAutoTrackEvent;
+  }
+
+  public Integer getTimeoutMilliseconds() {
+    return timeoutMilliseconds;
+  }
+
+  public Boolean getEnableCache() {
+    return enableCache;
+  }
+
+  public Map<String, Object> getProperties() {
+    return properties;
+  }
+
+  public Map<String, String> getCustomIds() {
+    return customIds;
   }
 }

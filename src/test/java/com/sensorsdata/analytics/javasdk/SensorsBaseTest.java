@@ -1,6 +1,5 @@
 package com.sensorsdata.analytics.javasdk;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.cache.LoadingCache;
 import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.cache.ExperimentGroupConfig;

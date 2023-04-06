@@ -1,12 +1,16 @@
 package com.sensorsdata.analytics.javasdk.util;
 
 import com.sensorsdata.analytics.javasdk.SensorsABParams;
+import com.sensorsdata.analytics.javasdk.bean.UserInfo;
 import com.sensorsdata.analytics.javasdk.common.Pair;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -144,5 +148,28 @@ public class ABTestUtil {
       res.append(String.format("{%s_%s}", entry.getKey(), entry.getValue()));
     }
     return res.toString();
+  }
+
+  /**
+   * 生成用户命中缓存key
+   *
+   * @param userInfo 用户标识信息
+   * @return 缓存key
+   */
+  public static String generateUserResultCacheKey(UserInfo userInfo, LogUtil log) {
+    String key = generateDefaultUserResultCacheKey(userInfo);
+    try {
+      MessageDigest instance = MessageDigest.getInstance("MD5");
+      instance.update(key.getBytes(StandardCharsets.UTF_8));
+      return new String(instance.digest(), StandardCharsets.UTF_8);
+    } catch (NoSuchAlgorithmException ignore) {
+      log.error("failed generate cache md5 key,so use original key.[distinctId:{},isLoginId:{},customIds:{}].",
+          userInfo.getDistinctId(), userInfo.isLoginId(), map2Str(userInfo.getCustomIds()));
+    }
+    return key;
+  }
+
+  private static String generateDefaultUserResultCacheKey(UserInfo userInfo) {
+    return String.format("%s_%b_%s", userInfo.getDistinctId(), userInfo.isLoginId(), map2Str(userInfo.getCustomIds()));
   }
 }

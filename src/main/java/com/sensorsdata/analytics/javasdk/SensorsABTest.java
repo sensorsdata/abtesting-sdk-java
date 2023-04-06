@@ -4,8 +4,6 @@ import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
-import lombok.NonNull;
-
 import java.util.Map;
 
 /**
@@ -22,8 +20,12 @@ public class SensorsABTest implements ISensorsABTest {
   }
 
   @Override
-  public <T> Experiment<T> asyncFetchABTest(@NonNull SensorsABParams<T> sensorsParams) {
-    return worker.fetchABTest(sensorsParams);
+  public <T> Experiment<T> asyncFetchABTest(SensorsABParams<T> sensorsParams) {
+    if (sensorsParams == null) {
+      throw new NullPointerException("sensorsParams is marked non-null but is null");
+    } else {
+      return this.worker.fetchABTest(sensorsParams);
+    }
   }
 
   @Override
@@ -127,8 +129,12 @@ public class SensorsABTest implements ISensorsABTest {
   }
 
   @Override
-  public <T> Experiment<T> fastFetchABTest(@NonNull SensorsABParams<T> sensorsParams) {
-    return worker.fetchABTest(sensorsParams.setEnableCache(true));
+  public <T> Experiment<T> fastFetchABTest(SensorsABParams<T> sensorsParams) {
+    if (sensorsParams == null) {
+      throw new NullPointerException("sensorsParams is marked non-null but is null");
+    } else {
+      return this.worker.fetchABTest(sensorsParams.setEnableCache(true));
+    }
   }
 
   @Override
@@ -241,20 +247,20 @@ public class SensorsABTest implements ISensorsABTest {
 
   @Override
   public <T> void trackABTestTrigger(Experiment<T> experiment) throws InvalidArgumentException {
-    worker.trackABTestTrigger(experiment, null, null);
+    worker.trackABTestTrigger(experiment, null, null, null);
   }
 
   @Override
   public <T> void trackABTestTrigger(Experiment<T> experiment, Map<String, Object> properties)
       throws InvalidArgumentException {
-    worker.trackABTestTrigger(experiment, properties, null);
+    worker.trackABTestTrigger(experiment, properties, null, null);
   }
 
   @Override
   public <T> void trackABTestTrigger(Experiment<T> experiment, Map<String, Object> properties,
       Map<String, String> customIds)
       throws InvalidArgumentException {
-    worker.trackABTestTrigger(experiment, properties, customIds);
+    worker.trackABTestTrigger(experiment, properties, customIds, null);
   }
 
   @Override

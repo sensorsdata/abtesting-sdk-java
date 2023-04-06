@@ -1,6 +1,5 @@
 package com.sensorsdata.analytics.javasdk.util;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpResponse;
@@ -28,7 +27,6 @@ import java.nio.charset.StandardCharsets;
  * @version 1.0.0
  * @since 2021/08/27
  */
-@Slf4j
 public class HttpConsumer implements Closeable {
 
   CloseableHttpClient httpClient;

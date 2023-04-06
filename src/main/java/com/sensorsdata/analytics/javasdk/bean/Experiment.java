@@ -1,6 +1,7 @@
 package com.sensorsdata.analytics.javasdk.bean;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,9 +12,11 @@ import java.io.Serializable;
  * @version 1.0.0
  * @since 2021/06/09 21:47
  */
+
 @Getter
 @Setter
 @AllArgsConstructor
+@Builder
 public class Experiment<T> implements Serializable {
   private static final long serialVersionUID = -236604631513293247L;
   /**
@@ -40,8 +43,21 @@ public class Experiment<T> implements Serializable {
    * 是否在白名单
    */
   private Boolean isWhiteList;
+
   /**
-   * 命中值
+   * 试验组唯一ID
+   */
+  private String abtestExperimentResultId;
+
+
+  /**
+   * 试验组版本
+   */
+  private String abtestExperimentVersion;
+
+
+  /**
+   * 命中结果
    */
   private T result;
 
@@ -50,5 +66,7 @@ public class Experiment<T> implements Serializable {
     this.isLoginId = isLoginId;
     this.result = value;
   }
+
+
 
 }

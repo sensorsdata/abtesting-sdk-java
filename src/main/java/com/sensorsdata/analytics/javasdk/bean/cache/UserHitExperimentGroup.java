@@ -1,7 +1,8 @@
 package com.sensorsdata.analytics.javasdk.bean.cache;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 
 import java.io.Serializable;
 
@@ -12,16 +13,20 @@ import java.io.Serializable;
  * @version 1.0.0
  * @since 2022/11/22 4:47 PM
  */
-@Getter
-@Setter
+@AllArgsConstructor
+@Builder
+@Data
 public class UserHitExperimentGroup implements Serializable {
 
   private static final long serialVersionUID = -2624648063644487605L;
+
+  /**
+   * 本次命中的主体ID
+   */
+  private String subjectId;
   private boolean isWhiteList;
+
+  private boolean cacheable;
   private ExperimentGroupConfig experimentGroupConfig;
 
-  public UserHitExperimentGroup(boolean isWhiteList, ExperimentGroupConfig experimentGroupConfig) {
-    this.isWhiteList = isWhiteList;
-    this.experimentGroupConfig = experimentGroupConfig;
-  }
 }

@@ -10,7 +10,7 @@ More**](https://www.sensorsdata.cn/about/aboutus.html)
 
 ## SDK 简介
 
-A/B Testing SDK 是一款用于 A/B 测试的 SDK。
+Java A/B Testing SDK 是一款用于 A/B 测试的 SDK。
 
 ## 集成文档
 
@@ -49,7 +49,7 @@ A/B Testing SDK 是一款用于 A/B 测试的 SDK。
 
 ## License
 
-Copyright 2015－2021 Sensors Data Inc.
+Copyright 2015－2023 Sensors Data Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
 License. You may obtain a copy of the License at

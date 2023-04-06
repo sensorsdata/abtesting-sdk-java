@@ -3,10 +3,6 @@ package com.sensorsdata.analytics.javasdk.bean;
 import com.sensorsdata.analytics.javasdk.ISensorsAnalytics;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -17,60 +13,115 @@ import java.io.Serializable;
  * @version 1.0.0
  * @since 2021/06/09 16:16
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ABGlobalConfig implements Serializable {
   private static final long serialVersionUID = 3285160955772051586L;
   /**
    * 单用户事件缓存
    */
-  @Getter
+  
   private final Integer eventCacheTime;
   /**
    * 事件总缓存用户量
    */
-  @Getter
+  
   private final Integer eventCacheSize;
   /**
    * 试验总缓存用户量
    */
-  @Getter
+  
   private final Integer experimentCacheSize;
   /**
    * 单用户试验缓存时间
    */
-  @Getter
+  
   private final Integer experimentCacheTime;
   /**
    * 是否开启 ABTestTrigger 事件
    */
-  @Getter
+  
   private final Boolean enableEventCache;
   /**
    * 分流试验地址
    */
-  @Getter
+  
   private final String apiUrl;
   /**
    * 神策分析 sa（要求使用3.2.0及以上版本）
    */
-  @Getter
+  
   private final ISensorsAnalytics sensorsAnalytics;
   /**
    * 网络请求连接池最大请求次数
    */
-  @Getter
+  
   private final Integer maxTotal;
   /**
    * 网络请求连接池并行接收请求数量
    */
-  @Getter
+  
   private final Integer maxPerRoute;
 
-  @Getter
+  
   private final LogLevelEnum logLevel;
+
+
+  public Integer getEventCacheTime() {
+    return eventCacheTime;
+  }
+
+  public Integer getEventCacheSize() {
+    return eventCacheSize;
+  }
+
+  public Integer getExperimentCacheSize() {
+    return experimentCacheSize;
+  }
+
+  public Integer getExperimentCacheTime() {
+    return experimentCacheTime;
+  }
+
+  public Boolean getEnableEventCache() {
+    return enableEventCache;
+  }
+
+  public String getApiUrl() {
+    return apiUrl;
+  }
+
+  public ISensorsAnalytics getSensorsAnalytics() {
+    return sensorsAnalytics;
+  }
+
+  public Integer getMaxTotal() {
+    return maxTotal;
+  }
+
+  public Integer getMaxPerRoute() {
+    return maxPerRoute;
+  }
+
+  public LogLevelEnum getLogLevel() {
+    return logLevel;
+  }
 
   public static Builder builder() {
     return new Builder();
+  }
+
+  private ABGlobalConfig(Integer eventCacheTime, Integer eventCacheSize, Integer experimentCacheSize,
+      Integer experimentCacheTime, Boolean enableEventCache, String apiUrl, ISensorsAnalytics sensorsAnalytics,
+      Integer maxTotal, Integer maxPerRoute, LogLevelEnum logLevel) {
+    this.eventCacheTime = eventCacheTime;
+    this.eventCacheSize = eventCacheSize;
+    this.experimentCacheSize = experimentCacheSize;
+    this.experimentCacheTime = experimentCacheTime;
+    this.enableEventCache = enableEventCache;
+    this.apiUrl = apiUrl;
+    this.sensorsAnalytics = sensorsAnalytics;
+    this.maxTotal = maxTotal;
+    this.maxPerRoute = maxPerRoute;
+    this.logLevel = logLevel;
   }
 
   @Override
@@ -89,7 +140,6 @@ public class ABGlobalConfig implements Serializable {
         '}';
   }
 
-  @NoArgsConstructor(access = AccessLevel.PRIVATE)
   public static class Builder {
     private Integer eventCacheTime;
     private Integer eventCacheSize;
@@ -101,6 +151,9 @@ public class ABGlobalConfig implements Serializable {
     private Integer maxTotal;
     private Integer maxPerRoute;
     private LogLevelEnum logLevel;
+
+    private Builder() {
+    }
 
     public ABGlobalConfig build() throws InvalidArgumentException {
       if (apiUrl == null || apiUrl.length() == 0) {
