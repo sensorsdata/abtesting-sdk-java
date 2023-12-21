@@ -60,7 +60,11 @@ public class ABGlobalConfig implements Serializable {
    */
   
   private final Integer maxPerRoute;
+  /**
+   * 是否开启请求耗时的记录
+   */
 
+  private final Boolean enableRecordRequestCostTime;
   
   private final LogLevelEnum logLevel;
 
@@ -101,6 +105,10 @@ public class ABGlobalConfig implements Serializable {
     return maxPerRoute;
   }
 
+  public Boolean getEnableRecordRequestCostTime() {
+    return enableRecordRequestCostTime;
+  }
+
   public LogLevelEnum getLogLevel() {
     return logLevel;
   }
@@ -111,7 +119,7 @@ public class ABGlobalConfig implements Serializable {
 
   private ABGlobalConfig(Integer eventCacheTime, Integer eventCacheSize, Integer experimentCacheSize,
       Integer experimentCacheTime, Boolean enableEventCache, String apiUrl, ISensorsAnalytics sensorsAnalytics,
-      Integer maxTotal, Integer maxPerRoute, LogLevelEnum logLevel) {
+      Integer maxTotal, Integer maxPerRoute, Boolean enableRecordRequestCostTime, LogLevelEnum logLevel) {
     this.eventCacheTime = eventCacheTime;
     this.eventCacheSize = eventCacheSize;
     this.experimentCacheSize = experimentCacheSize;
@@ -121,6 +129,7 @@ public class ABGlobalConfig implements Serializable {
     this.sensorsAnalytics = sensorsAnalytics;
     this.maxTotal = maxTotal;
     this.maxPerRoute = maxPerRoute;
+    this.enableRecordRequestCostTime = enableRecordRequestCostTime;
     this.logLevel = logLevel;
   }
 
@@ -136,6 +145,7 @@ public class ABGlobalConfig implements Serializable {
         ", sensorsAnalytics=" + sensorsAnalytics +
         ", maxTotal=" + maxTotal +
         ", maxPerRoute=" + maxPerRoute +
+        ", enableRecordRequestCostTime=" + enableRecordRequestCostTime +
         ", logLevel=" + logLevel +
         '}';
   }
@@ -150,6 +160,7 @@ public class ABGlobalConfig implements Serializable {
     private ISensorsAnalytics sensorsAnalytics;
     private Integer maxTotal;
     private Integer maxPerRoute;
+    private Boolean enableRecordRequestCostTime;
     private LogLevelEnum logLevel;
 
     private Builder() {
@@ -183,11 +194,14 @@ public class ABGlobalConfig implements Serializable {
       if (maxPerRoute == null) {
         maxPerRoute = 400;
       }
+      if (enableRecordRequestCostTime == null) {
+        enableRecordRequestCostTime = false;
+      }
       if (logLevel == null) {
         logLevel = LogLevelEnum.INFO;
       }
       return new ABGlobalConfig(eventCacheTime, eventCacheSize, experimentCacheSize,
-          experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, maxTotal, maxPerRoute, logLevel);
+          experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, maxTotal, maxPerRoute, enableRecordRequestCostTime, logLevel);
     }
 
     public ABGlobalConfig.Builder setEventCacheTime(Integer eventCacheTime) {
@@ -232,6 +246,11 @@ public class ABGlobalConfig implements Serializable {
 
     public ABGlobalConfig.Builder setMaxPerRoute(Integer maxPerRoute) {
       this.maxPerRoute = maxPerRoute;
+      return this;
+    }
+
+    public ABGlobalConfig.Builder enableRecordRequestCostTime(Boolean enableRecordRequestCostTime) {
+      this.enableRecordRequestCostTime = enableRecordRequestCostTime;
       return this;
     }
 

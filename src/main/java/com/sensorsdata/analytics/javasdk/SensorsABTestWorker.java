@@ -112,6 +112,8 @@ class SensorsABTestWorker {
 
   protected HttpConsumer createHttpConsumer(ABGlobalConfig config) {
     return new HttpConsumer(
+        this.log,
+        config.getEnableRecordRequestCostTime(),
         config.getApiUrl(),
         config.getMaxTotal(),
         config.getMaxPerRoute());
