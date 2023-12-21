@@ -103,6 +103,7 @@ public class ExperimentCacheManager {
    *
    * @param userInfo          用户标识信息
    * @param experimentResults 返回的分流结果
+   * @return 能缓存的用户分流结果
    */
   public UserHitExperiment getUserHitExperimentWithUpdateCache(UserInfo userInfo,
       JsonNode experimentResults) {
@@ -188,6 +189,7 @@ public class ExperimentCacheManager {
    * 解析用户分流结果
    *
    * @param experimentResults 返回的分流结果
+   * @return 能缓存的用户分流结果
    */
   public UserHitExperiment getUserHitExperimentWithoutUpdateCache(JsonNode experimentResults) {
     if (experimentResults == null) {

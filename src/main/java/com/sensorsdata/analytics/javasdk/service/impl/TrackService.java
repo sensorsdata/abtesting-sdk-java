@@ -145,7 +145,7 @@ public class TrackService implements ITrackService {
    *
    * @param toTrack    带上报的埋点记录
    * @param properties 附加属性
-   * @throws InvalidArgumentException
+   * @throws com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException 参数校验不合法抛出该异常
    */
   @Override
   public void trackABTestTrigger(List<TrackRecord> toTrack, Map<String, Object> properties)

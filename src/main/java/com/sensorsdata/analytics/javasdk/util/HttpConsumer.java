@@ -1,10 +1,12 @@
 package com.sensorsdata.analytics.javasdk.util;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.entity.StringEntity;
@@ -29,21 +31,36 @@ import java.nio.charset.StandardCharsets;
  */
 public class HttpConsumer implements Closeable {
 
-  CloseableHttpClient httpClient;
+  private CloseableHttpClient httpClient;
 
-  String serverUrl;
+  private LogUtil log;
 
-  static String JSON_MIMETYPE = "application/json";
+  private String serverUrl;
 
-  static String TIME_OUT = "timeout";
+  private static final String CONTENT_TYPE = "Content-type";
 
-  PoolingHttpClientConnectionManager cm;
+  private static final String JSON_MIMETYPE = "application/json";
 
-  SensorsKeepAliveStrategy strategy = new SensorsKeepAliveStrategy();
+  private static final String TIME_OUT = "timeout";
 
-  SensorsResponseHandler responseHandler = new SensorsResponseHandler();
+  private static final String REQUEST_ID_HEADER = "X-Request-Id";
 
-  public HttpConsumer(String serverUrl, int maxTotal, int maxPerRoute) {
+  private static final String AB_REQUEST_ID_HEADER = "X-AB-Request-Id";
+
+  private static final String AB_REQUEST_START_TIME_HEADER = "X-AB-Request-Start-Time";
+
+  private static final String AB_REQUEST_PROCESSING_TIME_HEADER = "X-AB-Request-Process-Time";
+
+  private PoolingHttpClientConnectionManager cm;
+
+  private SensorsKeepAliveStrategy strategy = new SensorsKeepAliveStrategy();
+
+  private boolean enableRecordRequestCostTime;
+
+
+  public HttpConsumer(LogUtil log, boolean enableRecordRequestCostTime, String serverUrl, int maxTotal, int maxPerRoute) {
+    this.log = log;
+    this.enableRecordRequestCostTime = enableRecordRequestCostTime;
     this.serverUrl = serverUrl;
     cm = new PoolingHttpClientConnectionManager();
     cm.setMaxTotal(maxTotal);
@@ -64,13 +81,27 @@ public class HttpConsumer implements Closeable {
         .setStaleConnectionCheckEnabled(true)
         .build();
     httpPost.setConfig(requestConfig);
-    //设置header
-    httpPost.setHeader("Content-type", JSON_MIMETYPE);
+    // 设置header
+    long requestStartTime = System.currentTimeMillis();
+    httpPost.setHeader(AB_REQUEST_START_TIME_HEADER, String.valueOf(requestStartTime));
+    httpPost.setHeader(CONTENT_TYPE, JSON_MIMETYPE);
     if (data != null && data.length() != 0) {
       StringEntity param = new StringEntity(data, StandardCharsets.UTF_8);
       httpPost.setEntity(param);
     }
-    return httpClient.execute(httpPost, responseHandler);
+    // 处理请求结果
+    try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+      if (enableRecordRequestCostTime) {
+        return handleResponseAndRecordRequestTimeCost(response, requestStartTime, System.currentTimeMillis());
+      }
+      return handleResponse(response);
+    } catch (Exception e) {
+      // 遇到接错误或其他网络错误，则没有 response ，需自补充耗时记录
+      if (enableRecordRequestCostTime) {
+        recordABRequestCostTimeFromHeader(null, requestStartTime, System.currentTimeMillis());
+      }
+      throw e;
+    }
   }
 
   @Override
@@ -78,6 +109,54 @@ public class HttpConsumer implements Closeable {
     if (httpClient != null) {
       httpClient.close();
     }
+  }
+
+  private String handleResponse(HttpResponse response) throws IOException {
+    return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+  }
+
+  private String handleResponseAndRecordRequestTimeCost(HttpResponse response, long requestStartTime, long requestEndTime) throws IOException {
+    recordABRequestCostTimeFromHeader(response, requestStartTime, requestEndTime);
+    return handleResponse(response);
+  }
+
+  private void recordABRequestCostTimeFromHeader(HttpResponse response, long requestStartTime, long requestEndTime) {
+    try {
+      String requestId = getABRequestIdFromResponse(response);
+      String requestTotalTime = String.valueOf(requestEndTime - requestStartTime);
+      String requestProcessTime = getAbRequestProcessTimeFromResponse(response);
+
+      StringBuilder message = new StringBuilder();
+      message.append("record ab request time consumption. [requestId: ").append(requestId)
+          .append(", requestTotalTime: ").append(requestTotalTime).append(" ms")
+          .append(", requestProcessTime: ").append(requestProcessTime).append(" ms]");
+      log.info(message.toString());
+    } catch (Exception e) {
+      log.warn("failed to record ab request time consumption", e);
+    }
+  }
+
+  private String getABRequestIdFromResponse(HttpResponse response) {
+    if (response != null) {
+      Header requestIdHeader = response.getFirstHeader(AB_REQUEST_ID_HEADER);
+      if (requestIdHeader == null) {
+        requestIdHeader = response.getFirstHeader(REQUEST_ID_HEADER);
+      }
+      if (requestIdHeader != null && StringUtils.isNotBlank(requestIdHeader.getValue())) {
+        return requestIdHeader.getValue();
+      }
+    }
+    return "unknown (not found)";
+  }
+
+  private String getAbRequestProcessTimeFromResponse(HttpResponse response) {
+    if (response != null) {
+      Header requestProcessTimeHeader = response.getFirstHeader(AB_REQUEST_PROCESSING_TIME_HEADER);
+      if (requestProcessTimeHeader != null && StringUtils.isNotBlank(requestProcessTimeHeader.getValue())) {
+        return requestProcessTimeHeader.getValue();
+      }
+    }
+    return "unknown (not found)";
   }
 
   static class SensorsKeepAliveStrategy implements ConnectionKeepAliveStrategy {
@@ -97,14 +176,6 @@ public class HttpConsumer implements Closeable {
     }
   }
 
-
-  static class SensorsResponseHandler implements ResponseHandler<String> {
-
-    @Override
-    public String handleResponse(HttpResponse response) throws IOException {
-      return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-    }
-  }
 }
 
 

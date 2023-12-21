@@ -154,6 +154,7 @@ public class ABTestUtil {
    * 生成用户命中缓存key
    *
    * @param userInfo 用户标识信息
+   * @param log 日志打印工具
    * @return 缓存key
    */
   public static String generateUserResultCacheKey(UserInfo userInfo, LogUtil log) {
