@@ -11,7 +11,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.protocol.HTTP;
@@ -57,23 +57,22 @@ public class HttpConsumer implements Closeable {
 
   private boolean enableRecordRequestCostTime;
 
-
-  public HttpConsumer(LogUtil log, boolean enableRecordRequestCostTime, String serverUrl, int maxTotal, int maxPerRoute) {
+  public HttpConsumer(LogUtil log, boolean enableRecordRequestCostTime, HttpClientBuilder httpClientBuilder,
+      String serverUrl, int maxTotal, int maxPerRoute) {
     this.log = log;
     this.enableRecordRequestCostTime = enableRecordRequestCostTime;
     this.serverUrl = serverUrl;
     cm = new PoolingHttpClientConnectionManager();
     cm.setMaxTotal(maxTotal);
     cm.setDefaultMaxPerRoute(maxPerRoute);
-    httpClient = HttpClients.custom().setUserAgent("SensorsAnalytics AB Test SDK").setConnectionManager(cm)
-        .setKeepAliveStrategy(strategy).build();
+    httpClient = httpClientBuilder
+        .setUserAgent("SensorsAnalytics AB Test SDK")
+        .setConnectionManager(cm)
+        .setKeepAliveStrategy(strategy)
+        .build();
   }
 
   public String consume(String data, int timeoutMilliseconds) throws IOException {
-    if (httpClient == null) {
-      httpClient = HttpClients.custom().setUserAgent("SensorsAnalytics AB Test SDK").setConnectionManager(cm)
-          .setKeepAliveStrategy(strategy).build();
-    }
     HttpPost httpPost = new HttpPost(serverUrl);
     RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(timeoutMilliseconds)
         .setConnectionRequestTimeout(timeoutMilliseconds)

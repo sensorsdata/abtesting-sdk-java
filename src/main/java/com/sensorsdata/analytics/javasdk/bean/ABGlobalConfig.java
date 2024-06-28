@@ -4,6 +4,9 @@ import com.sensorsdata.analytics.javasdk.ISensorsAnalytics;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
 
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+
 import java.io.Serializable;
 
 /**
@@ -68,6 +71,8 @@ public class ABGlobalConfig implements Serializable {
   
   private final LogLevelEnum logLevel;
 
+  private final transient HttpClientBuilder httpClientBuilder;
+
 
   public Integer getEventCacheTime() {
     return eventCacheTime;
@@ -113,13 +118,17 @@ public class ABGlobalConfig implements Serializable {
     return logLevel;
   }
 
+  public HttpClientBuilder getHttpClientBuilder() {
+    return httpClientBuilder;
+  }
+
   public static Builder builder() {
     return new Builder();
   }
 
   private ABGlobalConfig(Integer eventCacheTime, Integer eventCacheSize, Integer experimentCacheSize,
       Integer experimentCacheTime, Boolean enableEventCache, String apiUrl, ISensorsAnalytics sensorsAnalytics,
-      Integer maxTotal, Integer maxPerRoute, Boolean enableRecordRequestCostTime, LogLevelEnum logLevel) {
+      Integer maxTotal, Integer maxPerRoute, Boolean enableRecordRequestCostTime, LogLevelEnum logLevel, HttpClientBuilder httpClientBuilder) {
     this.eventCacheTime = eventCacheTime;
     this.eventCacheSize = eventCacheSize;
     this.experimentCacheSize = experimentCacheSize;
@@ -131,6 +140,7 @@ public class ABGlobalConfig implements Serializable {
     this.maxPerRoute = maxPerRoute;
     this.enableRecordRequestCostTime = enableRecordRequestCostTime;
     this.logLevel = logLevel;
+    this.httpClientBuilder = httpClientBuilder;
   }
 
   @Override
@@ -162,6 +172,8 @@ public class ABGlobalConfig implements Serializable {
     private Integer maxPerRoute;
     private Boolean enableRecordRequestCostTime;
     private LogLevelEnum logLevel;
+
+    private HttpClientBuilder httpClientBuilder;
 
     private Builder() {
     }
@@ -200,8 +212,13 @@ public class ABGlobalConfig implements Serializable {
       if (logLevel == null) {
         logLevel = LogLevelEnum.INFO;
       }
+
+      if(httpClientBuilder == null){
+        httpClientBuilder = HttpClients.custom();
+      }
+
       return new ABGlobalConfig(eventCacheTime, eventCacheSize, experimentCacheSize,
-          experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, maxTotal, maxPerRoute, enableRecordRequestCostTime, logLevel);
+          experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, maxTotal, maxPerRoute, enableRecordRequestCostTime, logLevel, httpClientBuilder);
     }
 
     public ABGlobalConfig.Builder setEventCacheTime(Integer eventCacheTime) {
@@ -256,6 +273,11 @@ public class ABGlobalConfig implements Serializable {
 
     public ABGlobalConfig.Builder setLogLevel(LogLevelEnum logLevel) {
       this.logLevel = logLevel;
+      return this;
+    }
+
+    public Builder setHttpClientBuilder(HttpClientBuilder httpClientBuilder) {
+      this.httpClientBuilder = httpClientBuilder;
       return this;
     }
   }
