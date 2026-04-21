@@ -221,57 +221,57 @@ public class ABGlobalConfig implements Serializable {
           experimentCacheTime, enableEventCache, apiUrl, sensorsAnalytics, maxTotal, maxPerRoute, enableRecordRequestCostTime, logLevel, httpClientBuilder);
     }
 
-    public ABGlobalConfig.Builder setEventCacheTime(Integer eventCacheTime) {
+    public Builder setEventCacheTime(Integer eventCacheTime) {
       this.eventCacheTime = eventCacheTime;
       return this;
     }
 
-    public ABGlobalConfig.Builder setEventCacheSize(Integer eventCacheSize) {
+    public Builder setEventCacheSize(Integer eventCacheSize) {
       this.eventCacheSize = eventCacheSize;
       return this;
     }
 
-    public ABGlobalConfig.Builder setExperimentCacheSize(Integer experimentCacheSize) {
+    public Builder setExperimentCacheSize(Integer experimentCacheSize) {
       this.experimentCacheSize = experimentCacheSize;
       return this;
     }
 
-    public ABGlobalConfig.Builder setExperimentCacheTime(Integer experimentCacheTime) {
+    public Builder setExperimentCacheTime(Integer experimentCacheTime) {
       this.experimentCacheTime = experimentCacheTime;
       return this;
     }
 
-    public ABGlobalConfig.Builder enableEventCache(Boolean enableEventCache) {
+    public Builder enableEventCache(Boolean enableEventCache) {
       this.enableEventCache = enableEventCache;
       return this;
     }
 
-    public ABGlobalConfig.Builder setApiUrl(String apiUrl) {
+    public Builder setApiUrl(String apiUrl) {
       this.apiUrl = apiUrl;
       return this;
     }
 
-    public ABGlobalConfig.Builder setSensorsAnalytics(ISensorsAnalytics sensorsAnalytics) {
+    public Builder setSensorsAnalytics(ISensorsAnalytics sensorsAnalytics) {
       this.sensorsAnalytics = sensorsAnalytics;
       return this;
     }
 
-    public ABGlobalConfig.Builder setMaxTotal(Integer maxTotal) {
+    public Builder setMaxTotal(Integer maxTotal) {
       this.maxTotal = maxTotal;
       return this;
     }
 
-    public ABGlobalConfig.Builder setMaxPerRoute(Integer maxPerRoute) {
+    public Builder setMaxPerRoute(Integer maxPerRoute) {
       this.maxPerRoute = maxPerRoute;
       return this;
     }
 
-    public ABGlobalConfig.Builder enableRecordRequestCostTime(Boolean enableRecordRequestCostTime) {
+    public Builder enableRecordRequestCostTime(Boolean enableRecordRequestCostTime) {
       this.enableRecordRequestCostTime = enableRecordRequestCostTime;
       return this;
     }
 
-    public ABGlobalConfig.Builder setLogLevel(LogLevelEnum logLevel) {
+    public Builder setLogLevel(LogLevelEnum logLevel) {
       this.logLevel = logLevel;
       return this;
     }

@@ -4,6 +4,7 @@ import static com.sensorsdata.analytics.javasdk.SensorsABTestConst.OUT_LIST_KEY;
 import static com.sensorsdata.analytics.javasdk.SensorsABTestConst.RESULTS_KEY;
 
 import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
+import com.sensorsdata.analytics.javasdk.bean.AllExperimentsResult;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
 import com.sensorsdata.analytics.javasdk.bean.TrackConfig;
 import com.sensorsdata.analytics.javasdk.bean.TrackRecord;
@@ -37,9 +38,12 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * AB Test 逻辑处理
@@ -180,6 +184,161 @@ class SensorsABTestWorker {
       }
     }
     return result;
+  }
+
+  AllExperimentsResult fetchAllExperiments(String distinctId, boolean isLoginId,
+      FetchAllExperimentsParams fetchAllParams) {
+    if (fetchAllParams == null) {
+      throw new NullPointerException("fetchAllParams is marked non-null but is null");
+    }
+
+    checkFetchAllParams(distinctId, isLoginId, fetchAllParams);
+
+    UserInfo userInfo = UserInfo.builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .customIds(fetchAllParams.getCustomIds())
+        .customProperties(fetchAllParams.getProperties())
+        .build();
+
+    String responseBody = getAllExperimentsResponseBody(userInfo, fetchAllParams.getTimeoutMilliseconds());
+    return buildAllExperimentsResult(
+        distinctId,
+        isLoginId,
+        userInfo,
+        fetchAllParams.getCustomIds(),
+        fetchAllParams.getEnableAutoTrackEvent(),
+        responseBody,
+        0L,
+        false);
+  }
+
+  AllExperimentsResult loadAllExperiments(String distinctId, boolean isLoginId,
+      LoadAllExperimentsParams loadAllParams, String dumpData) {
+    if (loadAllParams == null) {
+      throw new NullPointerException("loadAllParams is marked non-null but is null");
+    }
+    if (dumpData == null) {
+      throw new NullPointerException("dumpData is marked non-null but is null");
+    }
+
+    JsonNode dumpNode = parseDumpNode(dumpData);
+    String dumpDistinctId = requireTextField(dumpNode, "distinct_id");
+    boolean dumpIsLoginId = requireBooleanField(dumpNode, "is_login_id");
+    Map<String, String> dumpCustomIds = readCustomIds(dumpNode.get("custom_ids"));
+    // response_body 允许为空字符串（dump 时没有原始响应体，例如网络请求失败或响应无 results 字段的空结果）。
+    String responseBody = readOptionalTextField(dumpNode, "response_body");
+    long timestamp = dumpNode.has("timestamp") ? dumpNode.get("timestamp").asLong() : 0L;
+
+    if (!dumpDistinctId.equals(distinctId) || dumpIsLoginId != isLoginId) {
+      throw new IllegalArgumentException("user identity (distinctId, isLoginId) mismatch");
+    }
+    if (!compareCustomIds(dumpCustomIds, loadAllParams.getCustomIds())) {
+      throw new IllegalArgumentException("user identity (CustomIDs) mismatch");
+    }
+
+    UserInfo userInfo = UserInfo.builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .customIds(loadAllParams.getCustomIds())
+        .build();
+
+    return buildAllExperimentsResult(
+        distinctId,
+        isLoginId,
+        userInfo,
+        loadAllParams.getCustomIds(),
+        loadAllParams.getEnableAutoTrackEvent(),
+        responseBody,
+        timestamp,
+        true);
+  }
+
+  private AllExperimentsResult buildAllExperimentsResult(String distinctId, boolean isLoginId,
+      UserInfo userInfo, Map<String, String> customIds, boolean enableAutoTrackEvent, String responseBody,
+      long timestamp, boolean strictResponseBody) {
+    JsonNode response = parseSuccessfulResponse(responseBody, !strictResponseBody);
+    updateTrackConfig(response);
+    if (response == null) {
+      return createEmptyAllExperimentsResult(distinctId, isLoginId, customIds, responseBody, timestamp);
+    }
+
+    JsonNode results = response.findValue(RESULTS_KEY);
+    if (results == null) {
+      return createEmptyAllExperimentsResult(distinctId, isLoginId, customIds, responseBody, timestamp);
+    }
+
+    Map<String, Experiment<?>> experiments = new HashMap<>();
+    Map<String, TrackRecord> hitTrackRecordByParam = new HashMap<>();
+    Map<String, List<TrackRecord>> outTrackRecordByParam = buildOutTrackRecordByParam(userInfo, response);
+    UserHitExperiment userHitExperiment = experimentCacheManager.getUserHitExperimentWithoutUpdateCache(results);
+    Iterator<JsonNode> resIterator = results.elements();
+    while (resIterator.hasNext()) {
+      JsonNode node = resIterator.next();
+      String experimentId = getTextValueFromJsonNode(node, SensorsABTestConst.EXPERIMENT_ID_KEY);
+      UserHitExperimentGroup userHitExperimentGroup =
+          userHitExperiment == null ? null : userHitExperiment.getUserHitExperimentMap().get(experimentId);
+      if (userHitExperimentGroup == null) {
+        continue;
+      }
+
+      TrackRecord hitTrackRecord = TrackRecord.createTrackRecord(userInfo, userHitExperimentGroup);
+      for (Map.Entry<String, Variable> variableEntry
+          : userHitExperimentGroup.getExperimentGroupConfig().getVariableMap().entrySet()) {
+        String paramName = variableEntry.getKey();
+        Object result = castExperimentValue(variableEntry.getValue());
+        if (result == null) {
+          continue;
+        }
+        Experiment<Object> experiment =
+            convertExperiment(userHitExperimentGroup, distinctId, isLoginId, result);
+        if (!experiments.containsKey(paramName) || userHitExperimentGroup.isWhiteList()) {
+          experiments.put(paramName, experiment);
+          hitTrackRecordByParam.put(paramName, hitTrackRecord);
+        }
+      }
+    }
+
+    final Map<String, TrackRecord> finalHitTrackRecordByParam = hitTrackRecordByParam;
+    final Map<String, List<TrackRecord>> finalOutTrackRecordByParam = outTrackRecordByParam;
+    final String finalDistinctId = distinctId;
+    final boolean finalIsLoginId = isLoginId;
+    AllExperimentsResult.TrackCallback trackCallback = null;
+    if (enableAutoTrackEvent) {
+      trackCallback = new AllExperimentsResult.TrackCallback() {
+        @Override
+        public void track(String paramName) {
+          List<TrackRecord> toTrack = new ArrayList<>();
+          TrackRecord hitTrackRecord = finalHitTrackRecordByParam.get(paramName);
+          if (hitTrackRecord != null) {
+            toTrack.add(hitTrackRecord);
+          }
+          List<TrackRecord> outTrackRecord = finalOutTrackRecordByParam.get(paramName);
+          if (outTrackRecord != null) {
+            toTrack.addAll(outTrackRecord);
+          }
+          if (toTrack.isEmpty()) {
+            return;
+          }
+          try {
+            trackService.trackABTestTrigger(toTrack, null);
+          } catch (InvalidArgumentException e) {
+            log.error("Failed auto track fetchAll ABTest event.[distinctId:{},isLoginId:{},paramName:{}]",
+                finalDistinctId, finalIsLoginId, paramName, e);
+          }
+        }
+      };
+    }
+
+    return AllExperimentsResult.builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .customIds(customIds)
+        .experiments(experiments)
+        .trackCallback(trackCallback)
+        .responseBody(responseBody)
+        .timestamp(timestamp > 0 ? timestamp : System.currentTimeMillis())
+        .build();
   }
 
   <T> List<TrackRecord> getToTrack(UserInfo userInfo, String paramName, T defaultValue,
@@ -388,6 +547,18 @@ class SensorsABTestWorker {
     return null;
   }
 
+  private void checkFetchAllParams(String distinctId, boolean isLoginId,
+      FetchAllExperimentsParams fetchAllParams) {
+    if (distinctId == null || distinctId.isEmpty()) {
+      throw new IllegalArgumentException("distinctId is required but was null or empty");
+    }
+    Pair<Boolean, String> customIdCheckRes =
+        ABTestUtil.assertCustomIds(distinctId, isLoginId, fetchAllParams.getCustomIds());
+    if (customIdCheckRes.getKey()) {
+      throw new IllegalArgumentException(customIdCheckRes.getValue());
+    }
+  }
+
   /**
    * 获取用户命中结果
    *
@@ -426,10 +597,20 @@ class SensorsABTestWorker {
 
 
   private JsonNode getDispatcherResponse(UserInfo userInfo, String param, Integer timeoutMilliseconds) {
-    return getABTestByHttp(
+    String responseBody = getABTestByHttp(
         userInfo.getDistinctId(),
         userInfo.isLoginId(),
         param,
+        timeoutMilliseconds,
+        userInfo.getCustomProperties(),
+        userInfo.getCustomIds());
+    return parseSuccessfulResponse(responseBody, true);
+  }
+
+  private String getAllExperimentsResponseBody(UserInfo userInfo, Integer timeoutMilliseconds) {
+    return getFetchAllByHttp(
+        userInfo.getDistinctId(),
+        userInfo.isLoginId(),
         timeoutMilliseconds,
         userInfo.getCustomProperties(),
         userInfo.getCustomIds());
@@ -464,14 +645,165 @@ class SensorsABTestWorker {
     return new Experiment<>(distinctId, isLoginId, defaultValue);
   }
 
+  private <T> Experiment<T> convertExperiment(UserHitExperimentGroup userHitExperimentGroup, String distinctId,
+      Boolean isLoginId, T result) {
+    return Experiment.<T>builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .abTestExperimentId(userHitExperimentGroup.getExperimentGroupConfig().getAbtestExperimentId())
+        .abTestExperimentGroupId(userHitExperimentGroup.getExperimentGroupConfig().getAbtestExperimentGroupId())
+        .isControlGroup(userHitExperimentGroup.getExperimentGroupConfig().isControlGroup())
+        .isWhiteList(userHitExperimentGroup.isWhiteList())
+        .abtestExperimentResultId(userHitExperimentGroup.getExperimentGroupConfig().getAbtestExperimentResultId())
+        .abtestExperimentVersion(userHitExperimentGroup.getExperimentGroupConfig().getAbtestExperimentVersion())
+        .result(result)
+        .build();
+  }
+
+  private Object castExperimentValue(Variable variable) {
+    if (variable == null) {
+      return null;
+    }
+    switch (variable.getType()) {
+      case "STRING":
+      case "JSON":
+        return variable.getValue();
+      case "INTEGER":
+        try {
+          return Integer.valueOf(variable.getValue());
+        } catch (NumberFormatException e) {
+          log.warn("invalid integer experiment value, variable: [{}]", variable, e);
+          return null;
+        }
+      case "BOOLEAN":
+        return Boolean.valueOf(variable.getValue());
+      default:
+        return null;
+    }
+  }
+
+  private Map<String, List<TrackRecord>> buildOutTrackRecordByParam(UserInfo userInfo, JsonNode response) {
+    JsonNode outResults = response.findValue(OUT_LIST_KEY);
+    if (outResults == null) {
+      return Collections.emptyMap();
+    }
+
+    Set<String> params = new HashSet<>();
+    Iterator<JsonNode> iterator = outResults.elements();
+    while (iterator.hasNext()) {
+      JsonNode outResult = iterator.next();
+      JsonNode variables = outResult.findValue(SensorsABTestConst.VARIABLES_KEY);
+      if (variables == null) {
+        continue;
+      }
+      Iterator<JsonNode> variableIterator = variables.elements();
+      while (variableIterator.hasNext()) {
+        JsonNode variable = variableIterator.next();
+        String name = getTextValueFromJsonNode(variable, SensorsABTestConst.NAME_KEY);
+        if (name != null) {
+          params.add(name);
+        }
+      }
+    }
+
+    Map<String, List<TrackRecord>> outTrackRecordByParam = new HashMap<>();
+    for (String param : params) {
+      List<UserOutExperimentGroup> userOutExperimentGroups =
+          experimentCacheManager.getUserOutExperimentGroups(param, outResults);
+      if (userOutExperimentGroups.isEmpty()) {
+        continue;
+      }
+      List<TrackRecord> outTrackRecords = new ArrayList<>();
+      for (UserOutExperimentGroup userOutExperimentGroup : userOutExperimentGroups) {
+        outTrackRecords.add(TrackRecord.createOutTrackRecord(userInfo, userOutExperimentGroup));
+      }
+      outTrackRecordByParam.put(param, outTrackRecords);
+    }
+    return outTrackRecordByParam;
+  }
+
+  private AllExperimentsResult createEmptyAllExperimentsResult(String distinctId, boolean isLoginId,
+      Map<String, String> customIds, String responseBody, long timestamp) {
+    return AllExperimentsResult.builder()
+        .distinctId(distinctId)
+        .isLoginId(isLoginId)
+        .customIds(customIds)
+        .experiments(new HashMap<String, Experiment<?>>())
+        .responseBody(responseBody)
+        .timestamp(timestamp > 0 ? timestamp : System.currentTimeMillis())
+        .build();
+  }
+
+  private String getTextValueFromJsonNode(JsonNode node, String name) {
+    JsonNode value = node.findValue(name);
+    if (value != null) {
+      return value.asText();
+    }
+    return null;
+  }
+
   /**
    * 组合请求参数，然后进行网络请求
    *
    * @return 网络请求成功, 并且返回对象状态为 SUCCESS 和 results 有值，则返回 JsonNode；否则返回 null
    */
-  private JsonNode getABTestByHttp(String distinctId, boolean isLoginId, String experimentName,
+  private String getABTestByHttp(String distinctId, boolean isLoginId, String experimentName,
       int timeoutMilliseconds,
       Map<String, Object> customProperties, Map<String, String> customIds) {
+    return requestByHttp(buildFetchExperimentRequestParams(
+        distinctId,
+        isLoginId,
+        experimentName,
+        customProperties,
+        customIds), timeoutMilliseconds, experimentName);
+  }
+
+  private String getFetchAllByHttp(String distinctId, boolean isLoginId, int timeoutMilliseconds,
+      Map<String, Object> customProperties, Map<String, String> customIds) {
+    return requestByHttp(buildFetchAllRequestParams(
+        distinctId,
+        isLoginId,
+        customProperties,
+        customIds), timeoutMilliseconds, null);
+  }
+
+  private Map<String, Object> buildFetchExperimentRequestParams(String distinctId, boolean isLoginId,
+      String experimentName, Map<String, Object> customProperties, Map<String, String> customIds) {
+    Map<String, Object> params = buildBaseRequestParams(distinctId, isLoginId, customIds);
+    try {
+      Map<String, Object> objMap = ABTestUtil.customPropertiesHandler(customProperties);
+      if (!objMap.isEmpty()) {
+        params.put("custom_properties", objMap);
+        if (experimentName != null) {
+          params.put("param_name", experimentName);
+        }
+      }
+      return params;
+    } catch (InvalidArgumentException e) {
+      log.error("Invalid custom properties,{},[distinctId:{},isLoginId:{},experimentName:{}]",
+          e.getMessage(), distinctId, isLoginId, experimentName);
+      return null;
+    }
+  }
+
+  private Map<String, Object> buildFetchAllRequestParams(String distinctId, boolean isLoginId,
+      Map<String, Object> customProperties, Map<String, String> customIds) {
+    Map<String, Object> params = buildBaseRequestParams(distinctId, isLoginId, customIds);
+    try {
+      Map<String, Object> objMap = ABTestUtil.customPropertiesHandler(customProperties);
+      if (!objMap.isEmpty()) {
+        params.put("custom_properties", objMap);
+      }
+      return params;
+    } catch (InvalidArgumentException e) {
+      log.error("Invalid custom properties,{},[distinctId:{},isLoginId:{}]",
+          e.getMessage(), distinctId, isLoginId);
+      return null;
+    }
+  }
+
+  private Map<String, Object> buildBaseRequestParams(String distinctId, boolean isLoginId,
+      Map<String, String> customIds) {
     Map<String, Object> params = Maps.newHashMap();
     if (isLoginId) {
       params.put("login_id", distinctId);
@@ -481,32 +813,118 @@ class SensorsABTestWorker {
     params.put(SensorsABTestConst.PLATFORM, SensorsABTestConst.JAVA);
     params.put(SensorsABTestConst.VERSION_KEY, SensorsABTestConst.VERSION);
     params.put("properties", Collections.emptyMap());
-    if (!customIds.isEmpty()) {
+    if (customIds != null && !customIds.isEmpty()) {
       params.put("custom_ids", customIds);
     }
+    return params;
+  }
+
+  private String requestByHttp(Map<String, Object> params, int timeoutMilliseconds, String experimentName) {
+    if (params == null) {
+      return null;
+    }
     try {
-      Map<String, Object> objMap = ABTestUtil.customPropertiesHandler(customProperties);
-      if (!objMap.isEmpty()) {
-        params.put("custom_properties", objMap);
-        params.put("param_name", experimentName);
-      }
       String strJson = objectMapper.writeValueAsString(params);
       String result = httpConsumer.consume(strJson, timeoutMilliseconds);
       log.debug("Successfully get the httpConsumer result.[strJson:{},result:{}]", strJson, result);
-      JsonNode res = objectMapper.readTree(result);
-      if (res != null && SensorsABTestConst.SUCCESS.equals(res.findValue(SensorsABTestConst.STATUS_KEY).asText())) {
-        return res;
-      }
-      return null;
-    } catch (InvalidArgumentException e) {
-      log.error("Invalid custom properties,{},[distinctId:{},isLoginId:{},experimentName:{}]",
-          e.getMessage(), distinctId, isLoginId, experimentName);
-      return null;
+      return result;
     } catch (IOException e) {
-      log.error("Failed to network request.[distinctId:{},isLoginId:{},experimentName:{}]",
-          distinctId, isLoginId, experimentName, e);
+      log.error("Failed to network request.[experimentName:{}]", experimentName, e);
       return null;
     }
+  }
+
+  private JsonNode parseSuccessfulResponse(String responseBody, boolean ignoreError) {
+    if (responseBody == null) {
+      log.warn("Response body is null, return null.[ignoreError:{}]", ignoreError);
+      return null;
+    }
+    if (responseBody.isEmpty()) {
+      log.warn("Response body is empty, return null.[ignoreError:{}]", ignoreError);
+      return null;
+    }
+    try {
+      JsonNode res = objectMapper.readTree(responseBody);
+      JsonNode statusNode = res == null ? null : res.findValue(SensorsABTestConst.STATUS_KEY);
+      if (statusNode != null && statusNode.isTextual()
+          && SensorsABTestConst.SUCCESS.equals(statusNode.asText())) {
+        return res;
+      }
+      log.warn("Response body status is invalid, return null or throw later.[ignoreError:{},statusNode:{}]",
+          ignoreError, statusNode);
+      if (ignoreError) {
+        return null;
+      }
+      log.error("Response body status is not SUCCESS in strict mode.");
+      throw new IllegalArgumentException("invalid response_body: status is not SUCCESS");
+    } catch (IOException e) {
+      if (ignoreError) {
+        log.error("Failed to parse response body.", e);
+        return null;
+      }
+      log.error("Failed to parse response body in strict mode.", e);
+      throw new IllegalArgumentException("invalid response_body: failed to parse json", e);
+    }
+  }
+
+  private JsonNode parseDumpNode(String dumpData) {
+    try {
+      return objectMapper.readTree(dumpData);
+    } catch (IOException e) {
+      throw new IllegalArgumentException("invalid dump data: failed to parse json", e);
+    }
+  }
+
+  private String requireTextField(JsonNode node, String fieldName) {
+    JsonNode fieldNode = node.get(fieldName);
+    if (fieldNode == null || !fieldNode.isTextual() || fieldNode.asText().isEmpty()) {
+      throw new IllegalArgumentException("invalid dump data: missing " + fieldName + " field");
+    }
+    return fieldNode.asText();
+  }
+
+  /**
+   * 读取允许为空字符串的文本字段；字段缺失或类型不正确时抛异常，空字符串视为合法。
+   */
+  private String readOptionalTextField(JsonNode node, String fieldName) {
+    JsonNode fieldNode = node.get(fieldName);
+    if (fieldNode == null || fieldNode.isNull()) {
+      throw new IllegalArgumentException("invalid dump data: missing " + fieldName + " field");
+    }
+    if (!fieldNode.isTextual()) {
+      throw new IllegalArgumentException("invalid dump data: " + fieldName + " must be string");
+    }
+    return fieldNode.asText();
+  }
+
+  private boolean requireBooleanField(JsonNode node, String fieldName) {
+    JsonNode fieldNode = node.get(fieldName);
+    if (fieldNode == null || !fieldNode.isBoolean()) {
+      throw new IllegalArgumentException("invalid dump data: missing " + fieldName + " field");
+    }
+    return fieldNode.asBoolean();
+  }
+
+  private Map<String, String> readCustomIds(JsonNode customIdsNode) {
+    Map<String, String> customIds = new HashMap<>();
+    if (customIdsNode == null || customIdsNode.isNull()) {
+      return customIds;
+    }
+    if (!customIdsNode.isObject()) {
+      throw new IllegalArgumentException("invalid dump data: custom_ids must be object");
+    }
+    Iterator<Map.Entry<String, JsonNode>> fields = customIdsNode.fields();
+    while (fields.hasNext()) {
+      Map.Entry<String, JsonNode> field = fields.next();
+      customIds.put(field.getKey(), field.getValue().asText());
+    }
+    return customIds;
+  }
+
+  private boolean compareCustomIds(Map<String, String> expected, Map<String, String> actual) {
+    Map<String, String> expectedMap = expected == null ? Collections.<String, String>emptyMap() : expected;
+    Map<String, String> actualMap = actual == null ? Collections.<String, String>emptyMap() : actual;
+    return expectedMap.equals(actualMap);
   }
 
 

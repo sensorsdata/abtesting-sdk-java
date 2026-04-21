@@ -92,47 +92,42 @@ public class ABTestUtil {
   }
 
   public static <T> Pair<Boolean, String> assertCustomIds(SensorsABParams<T> sensorsParams) {
-    Map<String, String> customIds = sensorsParams.getCustomIds();
+    return assertCustomIds(
+        sensorsParams.getDistinctId(),
+        sensorsParams.getIsLoginId(),
+        sensorsParams.getCustomIds());
+  }
+
+  public static Pair<Boolean, String> assertCustomIds(String distinctId, Boolean isLoginId,
+      Map<String, String> customIds) {
     if (customIds == null || customIds.isEmpty()) {
-      String message = String.format("fetchABTest request without customIds.[distinctId:%s,isLoginId:%s,experiment:%s]",
-          sensorsParams.getDistinctId(), sensorsParams.getIsLoginId(), sensorsParams.getExperimentVariableName());
+      String message = String.format("request without customIds.[distinctId:%s,isLoginId:%s]",
+          distinctId, isLoginId);
       return Pair.of(false, message);
     }
     for (Map.Entry<String, String> entry : customIds.entrySet()) {
       if (StringUtils.isBlank(entry.getKey())) {
         String message = String.format(
-            "fetchABTest request with invalid customIds,the keys of customIds has null or empty.[distinctId:%s,isLoginId:%s,experiment:%s,customIds:%s]",
-            sensorsParams.getDistinctId(),
-            sensorsParams.getIsLoginId(),
-            sensorsParams.getExperimentVariableName(),
-            map2Str(customIds));
+            "request with invalid customIds,the keys of customIds has null or empty.[distinctId:%s,isLoginId:%s,customIds:%s]",
+            distinctId, isLoginId, map2Str(customIds));
         return Pair.of(true, message);
       }
       if (!pattern.matcher(entry.getKey()).matches()) {
         String message = String.format(
-            "fetchABTest request with invalid customIds,the key mismatch.[distinctId:%s,isLoginId:%s,experiment:%s,customIds:%s]",
-            sensorsParams.getDistinctId(),
-            sensorsParams.getIsLoginId(),
-            sensorsParams.getExperimentVariableName(),
-            map2Str(customIds));
+            "request with invalid customIds,the key mismatch.[distinctId:%s,isLoginId:%s,customIds:%s]",
+            distinctId, isLoginId, map2Str(customIds));
         return Pair.of(true, message);
       }
       if (StringUtils.isBlank(entry.getValue())) {
         String message = String.format(
-            "fetchABTest request with invalid customIds,the value of customIds has null or empty.[distinctId:%s,isLoginId:%s,experiment:%s,customIds:%s]",
-            sensorsParams.getDistinctId(),
-            sensorsParams.getIsLoginId(),
-            sensorsParams.getExperimentVariableName(),
-            map2Str(customIds));
+            "request with invalid customIds,the value of customIds has null or empty.[distinctId:%s,isLoginId:%s,customIds:%s]",
+            distinctId, isLoginId, map2Str(customIds));
         return Pair.of(true, message);
       }
       if (entry.getValue().length() > MAX_PROPERTY_LENGTH) {
         String message = String.format(
-            "fetchABTest request with invalid customIds,the value length is too long.[distinctId:%s,isLoginId:%s,experiment:%s,customIds:%s]",
-            sensorsParams.getDistinctId(),
-            sensorsParams.getIsLoginId(),
-            sensorsParams.getExperimentVariableName(),
-            map2Str(customIds));
+            "request with invalid customIds,the value length is too long.[distinctId:%s,isLoginId:%s,customIds:%s]",
+            distinctId, isLoginId, map2Str(customIds));
         return Pair.of(true, message);
       }
     }

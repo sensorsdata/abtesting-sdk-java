@@ -3,6 +3,7 @@ package com.sensorsdata.analytics.javasdk.cache;
 import static com.sensorsdata.analytics.javasdk.SensorsABTestConst.INVALID_ABTEST_UNIQUE_ID;
 import static org.junit.Assert.assertEquals;
 
+import com.sensorsdata.analytics.javasdk.SensorsBaseTest;
 import com.sensorsdata.analytics.javasdk.bean.TrackRecord;
 import com.sensorsdata.analytics.javasdk.bean.UserInfo;
 import com.sensorsdata.analytics.javasdk.bean.cache.ExperimentGroupConfig;

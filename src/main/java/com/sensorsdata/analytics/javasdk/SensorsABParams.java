@@ -139,61 +139,61 @@ public class SensorsABParams<T> {
       return new SensorsABParams<>(this);
     }
 
-    public SensorsABParams.Builder<T> distinctId(String distinctId) {
+    public Builder<T> distinctId(String distinctId) {
       this.distinctId = distinctId;
       return this;
     }
 
-    public SensorsABParams.Builder<T> isLoginId(boolean isLoginId) {
+    public Builder<T> isLoginId(boolean isLoginId) {
       this.isLoginId = isLoginId;
       return this;
     }
 
-    public SensorsABParams.Builder<T> experimentVariableName(String experimentVariableName) {
+    public Builder<T> experimentVariableName(String experimentVariableName) {
       this.experimentVariableName = experimentVariableName;
       return this;
     }
 
-    public SensorsABParams.Builder<T> defaultValue(T defaultValue) {
+    public Builder<T> defaultValue(T defaultValue) {
       this.defaultValue = defaultValue;
       return this;
     }
 
-    public SensorsABParams.Builder<T> enableAutoTrackEvent(boolean enableAutoTrackEvent) {
+    public Builder<T> enableAutoTrackEvent(boolean enableAutoTrackEvent) {
       this.enableAutoTrackEvent = enableAutoTrackEvent;
       return this;
     }
 
-    public SensorsABParams.Builder<T> timeoutMilliseconds(int timeoutMilliseconds) {
+    public Builder<T> timeoutMilliseconds(int timeoutMilliseconds) {
       this.timeoutMilliseconds = timeoutMilliseconds;
       return this;
     }
 
-    protected SensorsABParams.Builder<T> enableCache(boolean enableCache) {
+    protected Builder<T> enableCache(boolean enableCache) {
       this.enableCache = enableCache;
       return this;
     }
 
-    public SensorsABParams.Builder<T> properties(Map<String, Object> properties) {
+    public Builder<T> properties(Map<String, Object> properties) {
       if (properties != null) {
         this.properties.putAll(properties);
       }
       return this;
     }
 
-    public SensorsABParams.Builder<T> addProperty(String key, Object value) {
+    public Builder<T> addProperty(String key, Object value) {
       this.properties.put(key, value);
       return this;
     }
 
-    public SensorsABParams.Builder<T> customIds(Map<String, String> customIds) {
+    public Builder<T> customIds(Map<String, String> customIds) {
       if (customIds != null) {
         this.customIds.putAll(customIds);
       }
       return this;
     }
 
-    public SensorsABParams.Builder<T> addCustomId(String key, String value) {
+    public Builder<T> addCustomId(String key, String value) {
       this.customIds.put(key, value);
       return this;
     }

@@ -1,5 +1,6 @@
 package com.sensorsdata.analytics.javasdk;
 
+import com.sensorsdata.analytics.javasdk.bean.AllExperimentsResult;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
@@ -318,6 +319,39 @@ public interface ISensorsABTest {
    */
   <T> Experiment<T> fastFetchABTest(String distinctId, boolean isLoginId, String experimentVariableName,
       T defaultValue, boolean enableAutoTrackEvent, int timeoutMilliseconds, Map<String, Object> properties);
+
+  /**
+   * 一次获取用户当前命中的全部试验结果。
+   *
+   * <p>严格校验入口参数：与 {@link #fastFetchABTest(com.sensorsdata.analytics.javasdk.SensorsABParams)}（非法入参时记录 warn 并返回 defaultValue）
+   * 的宽松策略不同，本方法对非法入参直接抛 {@link IllegalArgumentException}，不返回兜底结果。
+   *
+   * @param distinctId 用户业务 ID / 匿名 ID，<b>必填且非空</b>
+   * @param isLoginId  是否为登录 ID
+   * @param params     GetAll 请求参数，不可为 {@code null}
+   * @return {@code AllExperimentsResult}
+   * @throws IllegalArgumentException 当 {@code distinctId} 为空、或 {@code params.customIds} 不合法时
+   * @throws NullPointerException     当 {@code params} 为 {@code null} 时
+   */
+  AllExperimentsResult fetchAllExperiments(String distinctId, boolean isLoginId,
+      FetchAllExperimentsParams params);
+
+  /**
+   * 从 dump 字符串中恢复全部试验结果。
+   *
+   * <p>要求 {@code distinctId}/{@code isLoginId}/{@code customIds} 与 {@code dumpData} 中的用户身份完全一致，
+   * 否则视为非法调用直接抛异常。
+   *
+   * @param distinctId 用户业务 ID / 匿名 ID，<b>必填且非空</b>，须与 dump 中的 {@code distinct_id} 一致
+   * @param isLoginId  是否为登录 ID，须与 dump 中的 {@code is_login_id} 一致
+   * @param params     LoadAll 请求参数，不可为 {@code null}
+   * @param dumpData   dump 字符串，不可为 {@code null}
+   * @return {@code AllExperimentsResult}
+   * @throws IllegalArgumentException 当 {@code dumpData} 不合法、或用户身份与 dump 不一致时
+   * @throws NullPointerException     当 {@code params} 或 {@code dumpData} 为 {@code null} 时
+   */
+  AllExperimentsResult loadAllExperiments(String distinctId, boolean isLoginId,
+      LoadAllExperimentsParams params, String dumpData);
 
 
   /**

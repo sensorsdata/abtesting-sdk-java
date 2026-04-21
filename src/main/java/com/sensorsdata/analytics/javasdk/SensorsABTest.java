@@ -1,6 +1,7 @@
 package com.sensorsdata.analytics.javasdk;
 
 import com.sensorsdata.analytics.javasdk.bean.ABGlobalConfig;
+import com.sensorsdata.analytics.javasdk.bean.AllExperimentsResult;
 import com.sensorsdata.analytics.javasdk.bean.Experiment;
 import com.sensorsdata.analytics.javasdk.exceptions.InvalidArgumentException;
 
@@ -243,6 +244,18 @@ public class SensorsABTest implements ISensorsABTest {
         .properties(properties)
         .enableCache(true)
         .build());
+  }
+
+  @Override
+  public AllExperimentsResult fetchAllExperiments(String distinctId, boolean isLoginId,
+      FetchAllExperimentsParams params) {
+    return worker.fetchAllExperiments(distinctId, isLoginId, params);
+  }
+
+  @Override
+  public AllExperimentsResult loadAllExperiments(String distinctId, boolean isLoginId,
+      LoadAllExperimentsParams params, String dumpData) {
+    return worker.loadAllExperiments(distinctId, isLoginId, params, dumpData);
   }
 
   @Override

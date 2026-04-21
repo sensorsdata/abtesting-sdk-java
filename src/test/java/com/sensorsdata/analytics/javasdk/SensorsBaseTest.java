@@ -193,6 +193,24 @@ public class SensorsBaseTest {
   }
 
   /**
+   * 统计 messageBuffer 中 $ABTestTrigger 事件数量，用于 fetchAll / loadAll 类测试断言触发次数。
+   */
+  protected int countTriggerEvents() {
+    if (messageBuffer == null) {
+      return 0;
+    }
+    String content = messageBuffer.toString();
+    int count = 0;
+    int index = 0;
+    String target = "\"$ABTestTrigger\"";
+    while ((index = content.indexOf(target, index)) >= 0) {
+      count++;
+      index += target.length();
+    }
+    return count;
+  }
+
+  /**
    * 通过反射 abtest 实例获取 SensorsABTestWorker 实例
    *
    * @param abTest ab 实例
